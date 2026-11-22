@@ -8,7 +8,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5985,
+      "words": 5536,
       "marginNotes": 16,
       "errors": []
     },
@@ -18,7 +18,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5985,
+      "words": 5536,
       "marginNotes": 16,
       "errors": []
     },
@@ -28,7 +28,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5985,
+      "words": 5536,
       "marginNotes": 16,
       "errors": []
     },
@@ -38,7 +38,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5985,
+      "words": 5536,
       "marginNotes": 16,
       "errors": []
     },
@@ -48,7 +48,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5985,
+      "words": 5536,
       "marginNotes": 16,
       "errors": []
     }
@@ -90,9 +90,9 @@
       "missing": []
     }
   ],
-  "numberedReferences": 16,
-  "inlineCitations": 20,
-  "localLinksChecked": 41,
+  "numberedReferences": 15,
+  "inlineCitations": 19,
+  "localLinksChecked": 40,
   "noJavaScript": "passed",
   "directFileOpen": "passed",
   "excalidrawScenes": 11

@@ -11,8 +11,8 @@
   },
   {
     "path": "article.md",
-    "bytes": 52677,
-    "sha256": "118ed643da45df23cada7552e897e294f59f3d36cca61d1c00a801652d6c3314"
+    "bytes": 48469,
+    "sha256": "8b39dbbfb664620730f6a800b1c9cddf604887e23eb8b2bed0a8c73821a2a76a"
   },
   {
     "path": "assets/diagrams/attention-fusion.excalidraw",
@@ -266,8 +266,8 @@
   },
   {
     "path": "index.html",
-    "bytes": 70586,
-    "sha256": "6671945faa97d8f465e430062b4b004b93d902fb7cb432d0853b1e3831676faf"
+    "bytes": 66667,
+    "sha256": "84130bc2fc0458ec5b6b7f6eb96c1efb7f398799e1331d185fab650733d5723b"
   },
   {
     "path": "LICENSE",
@@ -306,13 +306,13 @@
   },
   {
     "path": "sources.html",
-    "bytes": 34229,
-    "sha256": "274bba90724c65aded62137af4fd7a43488dc7ab0dcbc3abac19562147a964a7"
+    "bytes": 33656,
+    "sha256": "e8219cb60c5095f2d055a013794d120d9b3aa5b7b2718b21f17cbc90ad6ae23d"
   },
   {
     "path": "sources.md",
-    "bytes": 24353,
-    "sha256": "07bf9612159ab2e2b1e0e89cee3f8c40080caa3342f9479762311bd9c07045a3"
+    "bytes": 23806,
+    "sha256": "dcf2b7f00873dca5779e60a5240ceb25410ce0b7465e13d92978e4ac6a2502ec"
   },
   {
     "path": "THIRD_PARTY_NOTICES.md",
@@ -346,8 +346,8 @@
   },
   {
     "path": "tools/qa.cjs",
-    "bytes": 8574,
-    "sha256": "5c185cd865fdf0796baf33e3072f9298b1a49cb3a2506719ffbfea2309dc34a4"
+    "bytes": 8587,
+    "sha256": "3e6b987593ee5d04ba800836c385508c23f478baae37be89ab0f833704e1dadc"
   },
   {
     "path": "tools/reference-preview.cjs",
@@ -367,6 +367,6 @@
   {
     "path": "VERIFICATION.json",
     "bytes": 1806,
-    "sha256": "9414d9bfc81cc89f96de7bdf76a8f9e937a3ee7de22bdd9eeb13a9419914797a"
+    "sha256": "c971d89d4ff18a7139477c4ef0083cc91193ca05b2fd22c881e27d4c01c2b93a"
   }
 ]

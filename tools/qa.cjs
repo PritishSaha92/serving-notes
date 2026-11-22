@@ -46,7 +46,7 @@ const root=path.resolve(__dirname,'..');process.chdir(root);
   const ids=[...document.querySelectorAll('ol.references>li')].map(e=>e.id);
   return {ids,citations:[...document.querySelectorAll('a[href^="#ref-"]')].map(a=>({id:a.hash.slice(1),number:Number(a.textContent)}))};
  });
- assert.equal(refs.ids.length,16);assert.equal(new Set(refs.ids).size,16);
+ assert.equal(refs.ids.length,15);assert.equal(new Set(refs.ids).size,refs.ids.length);
  for(const cite of refs.citations)assert.equal(cite.number,refs.ids.indexOf(cite.id)+1,JSON.stringify(cite));
  const ledgerReport=[];
  for(const width of [320,390,768,1440,1720]){

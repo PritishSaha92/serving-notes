@@ -1,14 +1,14 @@
 # Sources & research trail
 
-Companion to [Learning to optimize a serving system](index.html), by Pritish Saha. Citation audit: **22 November 2026**.
+References for [Learning to optimize a serving system](index.html), by Pritish Saha. Updated **22 November 2026**.
 
-The article's measurements come from the saved project results. Public papers explain the underlying methods; upstream source establishes the implementation; other entrants' reports supplied hypotheses. These are different kinds of evidence.
+This page collects the background papers, exact code revisions and public reports relevant to the project. The article's measurements come from the saved project results.
 
-**Reading history matters.** The initial proposal's source register explicitly marked the broad paper and course catalog unread. Later reviews examined additional implementation paths. The bibliography below adds appropriate conceptual credit without turning suggested reading into a claim that I personally watched every lecture or that the agents completed every paper. “Recorded review” describes the saved research notes, not an independent reproduction of the source's benchmarks.
+The course and paper list includes suggested reading beyond what was studied during the competition. For implementation reports, the tables note which parts the research actually covered. Other authors' benchmarks were not independently reproduced here.
 
 ## Papers behind the system {#papers}
 
-These are conceptual references for the article. Their titles, author metadata and abstracts were checked for this citation pass; this is not a claim of a new full-paper replication study. The linked implementation and project evidence remain the authorities for this particular November 2026 stack.
+These papers explain the methods used by the system. For the exact behavior of the competition build, follow the pinned implementation links in the next section.
 
 1. **Gene M. Amdahl (1967).** [Validity of the single processor approach to achieving large scale computing capabilities](https://doi.org/10.1145/1465482.1465560). AFIPS Spring Joint Computer Conference, pp. 483–485. The article uses the familiar fixed-work speedup model to distinguish a component gain from a system gain; it is an illustrative calculation, not a fitted model of these runs.
 2. **Lianmin Zheng et al. (2024).** [SGLang: Efficient Execution of Structured Language Model Programs](https://arxiv.org/abs/2312.07104v2). Background for the serving runtime and cache reuse. The paper predates the pinned Muse implementation and does not specify its current DFlash, FA3 or Marlin paths.
@@ -55,7 +55,7 @@ The [archived feasibility review](evidence/fa3-feasibility-review.md) retains it
 
 ## X posts, blogs & discovery leads {#social-trail}
 
-The November 16 supplement used indexed X mirrors because direct X access returned HTTP 403. A citation refresh still could not retrieve the Rohan Arun post directly. Mirrors establish a **discovery trail**, not an authenticated full thread. No tweet quotation, guessed post ID, current ranking or social speedup claim is used as proof in the article.
+Some links surfaced through X during research. Direct access was restricted, so the notes used indexed mirrors and followed links to the available articles and code. The original threads could not all be verified; the table keeps that distinction visible.
 
 | Discovery trail | Primary material followed | Treatment |
 | :--- | :--- | :--- |

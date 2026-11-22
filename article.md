@@ -1,16 +1,16 @@
 ## The kernel got faster. Did the server? {#starting-point}
 
-The most useful result from my Open Kernel Challenge project was not the highest score. It was a discrepancy: the final attention-preparation path was faster in local measurements, passed the official serving checks, and still did not improve my best recorded serving score.
+Near the end of the Open Kernel Challenge, I had an attention-preparation kernel that ran faster on my local GPU. The submitted version passed the official serving evaluation too. But its score was lower than the simpler expert-scheduling patch I had submitted earlier.
 
-My best expert-scheduling submission scored **1.0251×** against unmodified SGLang. The final submission, which added attention-preparation fusion, scored **1.0224×**. Both passed correctness checks. These separate runs are too limited to establish a significant regression, but the extra optimization did not produce a demonstrated end-to-end win.
+The earlier patch scored **1.0251×** against unmodified SGLang; the final one scored **1.0224×**. That is too small a difference between separate runs to conclude that fusion made the server slower. It was enough, though, to leave me with a question: where had the local savings gone?
 
-I entered the serving track to learn how GPU optimization behaves inside a real inference system. The work began with a small change to expert routing, grew into occupancy-aware scheduling, and ended with a repaired attention-preparation path. Following that progression shows what changed between the submissions and what the measurements actually established.
+I entered the serving track to learn how GPU optimization behaves inside a real inference system. I started with expert routing, changed how lightly loaded experts were scheduled, and then tried to fuse the small operations before attention. Along the way, adding two rows of work per token exposed a rounding bug in a normalization I thought I had left alone.
 
-<aside class="sidenote" data-follow="1"><strong>How this project was built</strong> I used coding and research agents for source investigation, implementation, probes and independent reviews. “I” refers to the project I ran; it does not mean I hand-wrote every kernel or personally completed every resource in the reading list.</aside>
+<aside class="sidenote" data-follow="1"><strong>About the work</strong> I ran this project with coding and research agents. They helped investigate the source, implement changes, run probes and review the results. This is an account of that collaboration.</aside>
 
-The question running through these experiments was: **what unnecessary work can I remove while preserving the computation that the rest of the server expects?** I could reduce launches or change a tile and still get the same mathematical formula. The harder part was preserving the actual numerical and stateful behavior.
+Most of the changes began with the same idea: do less work around the existing kernels. That meant fewer route-processing launches, less wasted work on small experts, and fewer intermediate attention tensors. The tricky part was keeping the rounded values and cache writes the same.
 
-## First, define the system being measured {#system}
+## The server I started with {#system}
 
 The reference system—called **stock** throughout this article—served Muse Spark Open with SGLang v0.5.23 at commit `297e54fd` on **eight H200 GPUs**. It used NVFP4 quantized weights, an FP8 key/value cache, tensor parallelism and expert parallelism across eight ranks, and DFlash speculative decoding with an eight-token block. The official scored run evaluated 1, 4, 16 and 32 concurrent users. [1](#ref-contract)
 
@@ -18,7 +18,7 @@ The reference system—called **stock** throughout this article—served Muse Sp
 
 First, **prefill** processes the prompt and builds its key/value cache. During generation, the draft model proposes tokens; the larger target model checks them in a **verification** step. Accepted tokens advance the conversation, while the cache and other state must remain consistent with the accepted sequence. Inside each target step, attention reads cached history and the mixture-of-experts layers process routed activations. That is the loop I was optimizing. [2](#ref-system)
 
-<figure><img src="assets/diagrams/serving-path.svg" width="1000" height="610" alt="A request passes through scheduling, prefill, draft and target verification, then acceptance and cache updates before continuing the conversation."><figcaption>The unit of optimization is a serving loop. This is a conceptual dependency diagram, not a measured execution timeline. <a href="assets/diagrams/serving-path.excalidraw" download>Editable diagram</a></figcaption></figure>
+<figure><img src="assets/diagrams/serving-path.svg" width="1000" height="610" alt="A request passes through scheduling, prefill, draft and target verification, then acceptance and cache updates before continuing the conversation."><figcaption>One pass through the serving loop. Arrows show dependencies; box widths do not represent elapsed time. <a href="assets/diagrams/serving-path.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 A standalone kernel benchmark answers a narrow question: how long does this operator take on these inputs? A serving benchmark also includes scheduling, draft execution, communication, memory pressure and the sequence of requests. A faster operator may occupy little of the exposed critical path, or its integration may introduce work elsewhere.
 
@@ -28,13 +28,13 @@ For a simple serial model, Amdahl's law gives the limit: if a fraction <var>f</v
 
 If a component occupies 5% of the total and becomes twice as fast, this model gives only about 1.026× overall. This is an illustration, not an estimate of my attention path. In a distributed server, overlap makes it especially important to identify exposed time rather than add operator durations together.
 
-<div class="reading"><span>Study connection</span><a href="https://mlsyscourse.org/slides/14-LLM-serving-part1.pdf">CMU's LLM Serving slides</a> provide background for batching and cache management. They are useful alongside this system diagram; they are not evidence for the measurements below.</div>
+<div class="reading"><span>Further reading</span><a href="https://mlsyscourse.org/slides/14-LLM-serving-part1.pdf">CMU's LLM Serving slides</a> explain batching and cache management—the work around the model that also contributes to request latency.</div>
 
-### Two machines, two kinds of evidence
+### Testing locally on a different GPU
 
 I could run local probes on an **L40**. The official evaluation ran on **H200s**. This split was useful for finding indexing, conversion and replay failures, but it was a poor substitute for profiling the target server. A local preparation benchmark did not execute the target H200 attention backend or the full eight-rank model.
 
-I kept three categories separate: source reasoning, local experiments, and official serving results. A source audit could justify a test; a local test could reject an idea; an official pass could validate the submitted bundle on that workload. None of those automatically proved a universal speedup.
+This shaped the workflow. Local tests could catch a wrong index or a changed query byte quickly. Finding out whether a patch helped the server meant submitting it to the H200 evaluation and waiting for the result.
 
 
 ## Expert parallelism changes the size of the problem {#experts}
@@ -51,7 +51,7 @@ To see why the route count matters, write the first expert projection as a matri
 
 ### Start with the route map
 
-The first submitted change was deliberately small: a Triton kernel replaced the GPU-side global-to-local expert-ID mapping. It looked up each global ID in the ownership map, wrote the corresponding local ID, and kept non-local routes at `-1`. The CPU path stayed unchanged. This mapping-only entry passed and scored **1.0088×**. The same patch with mixed chunking—a scheduler option that combines prefill and ongoing generation work—later scored **1.0149×**. These were useful early baselines, not a reason to assume that every subsequent change would add to the score. [5](#ref-evidence)
+The first submitted change was small: a Triton kernel replaced the GPU-side global-to-local expert-ID mapping. It looked up each global ID in the ownership map, wrote the corresponding local ID, and kept non-local routes at `-1`. The CPU path stayed unchanged. This mapping-only entry passed and scored **1.0088×**. The same patch with mixed chunking—a scheduler option that combines prefill and ongoing generation work—later scored **1.0149×**. [5](#ref-evidence)
 
 Once the routes were local, the next question was how much work each expert actually received. A **row tile** is the group of activation rows processed together by a matrix-multiplication kernel. A larger tile can improve reuse when it is well occupied, but a lightly loaded expert may leave many of those row slots unused.
 
@@ -70,17 +70,17 @@ The weight dimensions stay fixed while the useful activation rows change. A 12-r
 
 ### A smaller tile was not automatically a better tile
 
-The first version tried a 16-row tile for lightly loaded experts. It failed a local numerical comparison. Diagnostic runs traced the discrepancy through the first projection, activation and second projection. Changing a tile can change FP32 accumulation grouping before BF16 rounding, even when the nominal data types and model equations stay the same. The original failure was retained; an official check passing did not erase it.
+The first version tried a 16-row tile for lightly loaded experts. It failed a local numerical comparison. Diagnostic runs traced the discrepancy through the first projection, activation and second projection. Changing a tile can change FP32 accumulation grouping before BF16 rounding, even when the nominal data types and model equations stay the same.
 
-That made “same kernel, different launch” an insufficient correctness argument. The 16-row candidate stayed rejected. The accepted 32-row variant had its own tests and submitted identity; it was not a relabeling of the failed experiment.
+So keeping Marlin's arithmetic code was not enough to guarantee the same result. I left the 16-row version out and tested a 32-row version separately.
 
-<div class="reading"><span>Study connection</span><a href="https://siboehm.com/articles/22/CUDA-MMM">Si Böhm's CUDA matmul worklog</a> is a good companion for understanding why tiling changes reuse and execution. <a href="https://mlsyscourse.org/slides/06-CUDA-programming.pdf">CMU's GPU Architecture &amp; CUDA Programming slides</a> cover the thread hierarchy and reductions. Neither establishes numerical equivalence for this Marlin path.</div>
+<div class="reading"><span>Further reading</span><a href="https://siboehm.com/articles/22/CUDA-MMM">Si Böhm's CUDA matmul worklog</a> walks through how tiling changes data reuse and execution. <a href="https://mlsyscourse.org/slides/06-CUDA-programming.pdf">CMU's GPU Architecture &amp; CUDA Programming slides</a> cover the thread hierarchy behind those choices.</div>
 
 ### The version that survived
 
 The successful adaptive variant used a **32-row tile for experts with at most 16 routes**, retaining the stock larger tile for the other experts. The dispatch was derived from tensor dimensions, the stock tile and expert metadata. Under this model's configuration, the adaptive regime covered token counts from 116 through 512. It was not a branch on the benchmark's user labels.
 
-<aside class="sidenote"><strong>Dispatch by the problem</strong> Tensor shapes and expert occupancy are properties of the computation. “Four users” or “sixteen users” are labels from the evaluator. The optimization must work from the former.</aside>
+<aside class="sidenote"><strong>Why token count?</strong> The kernel sees tensor shapes and expert loads. The number of users is only an indirect guide to those shapes, especially during ramp-up, prefill and draining.</aside>
 
 In simplified pseudocode, the partition looks like this:
 
@@ -112,15 +112,15 @@ The implementation runs the two classes through the first projection, applies th
 
 The adaptive schedule introduced its own overhead: map IDs, count routes, classify experts and construct two masked route arrays. The next step was to combine that bookkeeping into one Triton kernel. Separate tensor operations cost launches and temporary tensors even when the work is integer indexing rather than matrix multiplication.
 
-The GEMM People report was useful prior art for fusing small routing and dispatch operations. Its model and B200 hardware differed from this project, so the transferable idea was to reduce the bookkeeping—not to expect its measured speedup. [7](#ref-precedents)
+The GEMM People report explored similar route/dispatch fusion on a different model and B200 hardware. It suggested looking at the small operations between the GEMMs as another place to save launches. [7](#ref-precedents)
 
 The fused classifier loads global IDs, maps them to local IDs, constructs a histogram, looks up each route's expert load, and writes the small and large route arrays. This is integer bookkeeping. It does not change activation precision, route weights or the expert GEMM equations.
 
 Here the reference was straightforward to test exactly: every live route must appear once, every non-local route must stay inactive, and the two arrays must agree with the reference partition even as graph inputs change. Unlike the earlier tile change, this fusion did not alter a floating-point reduction.
 
-The adaptive parent scored **1.0247×**. Adding the fused classifier produced **1.0251×**, the highest completed score in my project. That 0.0004 difference was nominal; separate runs did not establish that the classifier caused an improvement of that size. The stronger result was that the combined patch passed the official all-load evaluation. [8](#ref-fused)
+The adaptive parent scored **1.0247×**. With the fused classifier, the score was **1.0251×**, my highest recorded result. The difference was too small to attribute confidently to classification fusion, but the combined patch passed at all four loads. I kept it as the best-scoring version while investigating attention. [8](#ref-fused)
 
-<aside class="sidenote"><strong>Names matter</strong> “Fused-stock” in the results means the fused adaptive expert patch with stock launch flags. It is not unmodified stock SGLang.</aside>
+<aside class="sidenote"><strong>A name in the run logs</strong> “Fused-stock” means this expert patch with stock launch flags. The code is modified; the flags are unchanged.</aside>
 
 ## A second opportunity: work before attention {#attention}
 
@@ -140,7 +140,7 @@ Triton’s [fused-softmax tutorial](https://triton-lang.org/main/getting-started
 
 The fused path had to write to the same full-attention or sliding-window cache locations as stock. Slot zero remained reserved for graph padding. Untouched slots had to remain untouched. A backend wait that protects cache ownership still had to happen before the new writer ran.
 
-<figure><img src="assets/diagrams/cache-writes.svg" width="1000" height="560" alt="Token A writes slot 17 and token B writes slot 42. The padding row maps to reserved slot zero, which is skipped. All other cache slots remain untouched."><figcaption>A cache write is an address-and-state contract. These example locations illustrate the invariant; the backend supplies the real full-attention or sliding-window locations. <a href="assets/diagrams/cache-writes.excalidraw" download>Editable diagram</a></figcaption></figure>
+<figure><img src="assets/diagrams/cache-writes.svg" width="1000" height="560" alt="Token A writes slot 17 and token B writes slot 42. The padding row maps to reserved slot zero, which is skipped. All other cache slots remain untouched."><figcaption>Write each token to its assigned slot and leave the rest alone. The locations here are examples; the backend supplies the actual full-attention or sliding-window addresses. <a href="assets/diagrams/cache-writes.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 The dispatch was deliberately narrow: eligible FA3 decode or target-verify calls, the expected unscaled FP8 cache layout, and compatible buffers. Prefill, mixed batches, incompatible cache settings and other backends retained the ordinary path. “Can this kernel compute the values?” was only half the question. The other half was “who writes the cache when this branch is not taken?”
 
@@ -158,11 +158,11 @@ The implementation retained that intermediate rounding and matched the installed
 
 <aside class="sidenote" data-follow="1"><strong>Fusion is not permission to skip rounding</strong> A temporary tensor may disappear; its numerical effect may still be required.<img src="assets/diagrams/rounding-note.svg" width="420" height="290" alt="Preserve the FP32 to BF16 to FP8 conversion chain instead of converting directly from FP32 to FP8."></aside>
 
-The earlier survey had already recorded a related warning from the NKI team 7013 report: moving a BF16 materialization boundary can change the integrated result. Keeping that rounding step was necessary. It was still not enough. [7](#ref-precedents)
+The NKI team 7013 report had raised a similar issue with moving a BF16 rounding boundary. Here, preserving that conversion avoided one source of differences. The normalization before it still needed testing. [7](#ref-precedents)
 
 The local conversion tests included production-path byte comparisons and probes using all 65,536 BF16 input encodings. Those checks addressed conversion behavior; they did not exhaust the possible inputs to the normalization that produced those values.
 
-<div class="reading"><span>Study connection</span><a href="https://humansand.ai/blog/gpu-accelerated-weight-teleportation">GPU-accelerated Weight Teleportation</a> is a useful parallel reading on avoiding intermediate handoffs. It concerns RL weight synchronization, not this serving patch. I did not implement its compression or weight-sync pipeline.</div>
+<div class="reading"><span>A related systems example</span><a href="https://humansand.ai/blog/gpu-accelerated-weight-teleportation">GPU-accelerated Weight Teleportation</a> looks at intermediate handoffs in RL weight synchronization. It is a separate application of the same question: how much work happens between the expensive operations?</div>
 
 ## The failure hiding at a tile boundary {#rounding}
 
@@ -194,7 +194,7 @@ For one head vector, RMS normalization scales each component by <code>1 / sqrt(m
 
 <figure><img src="assets/diagrams/rounding-midpoint.svg" width="1000" height="530" alt="Two nearly equal normalized values fall on opposite sides of a BF16 midpoint. If subsequent FP8 conversion also separates them, the stored query bytes differ."><figcaption>Why one byte can expose a real numerical change. This number line explains the mechanism; it is deliberately not drawn as a quantitative plot of the saved fixtures. <a href="assets/diagrams/rounding-midpoint.excalidraw" download>Editable diagram</a></figcaption></figure>
 
-The mathematical normalization formula had stayed the same; the finite-precision path implementing it had changed. NVIDIA’s floating-point guide explains the general reduction-order issue. The retained fixtures and controlled probes supplied the project-specific diagnosis. [12](#ref-numerics) [13](#ref-repair)
+The normalization formula was unchanged, but its FP32 sum was now grouped differently. NVIDIA’s floating-point guide explains why that matters; the saved inputs made it possible to reproduce the effect in this kernel. [12](#ref-numerics) [13](#ref-repair)
 
 ### The first repair was still incomplete
 
@@ -211,7 +211,7 @@ grid = ceil_div(work_rows, block_m)
 
 That fixed the original fixtures. A wider boundary sweep then found query/key discrepancies in the stock `BLOCK_M = 32` family, including T = 3641. Matching the tile alone had failed again.
 
-The final policy was therefore two-part: use stock’s Q+K row count to select the tile for supported families, and use the entire ordinary preparation path for the unsupported family. The fused grid still covered all Q+K+V rows when fusion was eligible. The wider-family arithmetic discrepancy remained unexplained; the fallback avoided executing it.
+The final repair kept stock’s Q+K-based tile selection for the supported families and sent the entire `BLOCK_M = 32` family through ordinary preparation. Fused launches still covered all Q+K+V rows. I did not resolve the wider-family arithmetic discrepancy, so that case used the stock path.
 
 <aside class="sidenote"><strong>A family, not a list of exceptions</strong> With these head counts, T = 3641 gives 18 × 3641 = 65,538 Q/K rows, entering the stock <code>BLOCK_M = 32</code> family. Eligibility follows shape and head metadata rather than naming individual failing token counts.</aside>
 
@@ -223,21 +223,21 @@ Fixing the three minimized fixtures was the start of validation, not the end. Th
 
 Separate tests covered exceptional values, tile boundaries, changing graph inputs and cache locations, padded rows, untouched slots, and actual model dispatch back to stock. The model tests exercised real preparation and cache writes, but used a stand-in for the attention computation. Six configurations also compiled for SM90, the H200’s GPU architecture target. Compilation still did not execute FA3 or PDL on that hardware.
 
-<aside class="sidenote"><strong>2,048 means cases, not a proof</strong> 512 token counts × two RoPE modes × two finite seed families. It covers every count in that interval for those inputs, not every possible tensor value.</aside>
+<aside class="sidenote"><strong>Inside the sweep</strong> 512 token counts × two RoPE modes × two finite seed families. Every count in that interval was tested, with additional suites for exceptional values and graph replay.</aside>
 
-<figure><img src="assets/diagrams/evidence-ladder.svg" width="1000" height="500" alt="Local L40 tests check bytes, fixtures, replay and fallback. SM90 compilation does not execute the target. Official H200 serving evaluates integration, correctness, memory and score."><figcaption>Each stage answers a different question. Later evidence adds coverage; it does not turn the earlier tests into universal proofs. <a href="assets/diagrams/evidence-ladder.excalidraw" download>Editable diagram</a></figcaption></figure>
+<figure><img src="assets/diagrams/evidence-ladder.svg" width="1000" height="500" alt="Local L40 tests check bytes, fixtures, replay and fallback. SM90 compilation does not execute the target. Official H200 serving evaluates integration, correctness, memory and score."><figcaption>From local byte comparisons to the complete H200 server. The attention consumer and multi-GPU runtime only enter the last stage. <a href="assets/diagrams/evidence-ladder.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 The local preparation measurements were encouraging: **4.56–5.21 μs per layer saved** at the tested smaller sizes on the L40. These measurements included the device-side QK/RoPE preparation, casts and cache store. They excluded CPU dispatch, projections, FA3 itself, communication and the rest of serving. Those timings justified investigating fusion, but did not predict its H200 serving score.
 
-This is where the queue became part of the engineering decision. At final selection, the repair’s H200 check was still queued. I chose the locally validated, independently reviewed repair for the last scored experiment, preserved the earlier 1.0251× entry, and recorded the missing integrated validation as a risk. The original A and B patches stayed blocked by their known failures. The final patch was repaired B on top of the fused expert schedule, with stock launch flags. Mixed chunking and the other experiments were left out. [14](#ref-result)
+The repair’s H200 check was still queued when I had to choose the final submission. I decided to try the repaired version, knowing that its first full-server execution might be the scored run itself. The earlier 1.0251× entry stayed preserved. I submitted repaired B on top of the fused expert schedule, with stock flags; neither original failed variant nor mixed chunking was included. [14](#ref-result)
 
-When the scored run returned, it passed: all **176 reference turns**, later-turn checks across **45,154 served positions**, and memory **0.2 GB per GPU below stock**. The exact submitted bundle had now run successfully in the official H200 server. The official pass refers to the evaluator’s model-agreement gates; it does not assert byte-identical full-model outputs. That was the missing integration evidence. The next question was whether it had improved the score.
+The scored run passed: all **176 reference turns**, later-turn checks across **45,154 served positions**, and memory **0.2 GB per GPU below stock**. These were the evaluator’s model-agreement checks, rather than the exact-byte comparisons used for local preparation tests. The repaired patch had now run successfully in the H200 server. Its score was the disappointing part.
 
-## What the serving results actually say {#results}
+## The serving results {#results}
 
 The score was **1.0224×**, below the earlier fused expert schedule’s **1.0251×**. The metric compares throughput at stock’s per-user interactivity point for each load and aggregates those ratios geometrically. In other words, it rewards throughput while accounting for the per-user serving rate, rather than reporting a kernel’s maximum raw tokens per second. The chart and table use those official frontier ratios. [1](#ref-contract)
 
-<figure class="results-figure"><img src="assets/diagrams/results.svg" width="1000" height="460" alt="Official ratios: fused expert scheduling scores 1.0387, 1.0091, 1.0217 and 1.0311 at 1, 4, 16 and 32 users. Repaired B scores 1.0318, 1.0097, 1.0217 and 1.0265. These are separate runs, not a controlled paired candidate comparison."><figcaption>Percentage improvement over each run's stock reference. No error bars are available for this candidate comparison; none are invented. <a href="evidence/results.csv" download>Download the data</a></figcaption></figure>
+<figure class="results-figure"><img src="assets/diagrams/results.svg" width="1000" height="460" alt="Official ratios: fused expert scheduling scores 1.0387, 1.0091, 1.0217 and 1.0311 at 1, 4, 16 and 32 users. Repaired B scores 1.0318, 1.0097, 1.0217 and 1.0265. These are separate runs, not a controlled paired candidate comparison."><figcaption>Percentage improvement over each run's stock reference. These runs do not provide confidence intervals for the comparison between patches. <a href="evidence/results.csv" download>Download the data</a></figcaption></figure>
 
 | Concurrent users | Fused expert scheduling | + Repaired attention preparation |
 | :--- | ---: | ---: |
@@ -249,11 +249,11 @@ The score was **1.0224×**, below the earlier fused expert schedule’s **1.0251
 
 The final run’s ratio was slightly higher at four users, matched at sixteen to the reported precision, and was lower at one and thirty-two. The aggregate difference is **0.0027**, or about **0.263% relative to the earlier score**. These were separate official runs with their own stock references, not randomized repeated comparisons between the two candidates.
 
-<aside class="sidenote"><strong>Read the denominator</strong> Each ratio compares a candidate with its stock reference. Comparing the two ratios does not turn the runs into a paired, repeated candidate-versus-candidate experiment.</aside>
+<aside class="sidenote"><strong>The stock reference</strong> Each candidate was measured against stock in its own run. To isolate a small difference between patches, I would want repeated, alternating measurements on the same hardware and workload.</aside>
 
-The raw 32-user measurement reported one repetition. Its zero reported spread is not evidence of zero variability. Some latency measurements were also worse. These observations are reasons to investigate, not enough to assign the difference to fusion.
+The raw 32-user measurement had only one repetition, so its reported zero spread tells us little about variability. Some latency measurements also worsened.
 
-Why did local savings not become a higher score? The available evidence does not settle that. Hardware differences, integration overhead, branch frequency, the fraction of runtime affected and run variability are candidate explanations—not findings. The returned logs were truncated and contained no per-kernel activation counts or profiler trace. A useful next experiment would measure the actual branch coverage and exposed preparation time on the same H200 system before attributing the result to any one mechanism.
+I cannot tell from these results where the local savings went. The H200 may behave differently, the optimized branch may run less often than expected, or the difference may be ordinary run variability. The returned logs were truncated and had neither per-kernel invocation counts nor a profiler trace. I would start the next investigation by measuring how often the fused path runs and how much preparation time it actually removes on H200.
 
 The full sequence of scored experiments makes the outcome easier to place. Mixed chunking remained a separate flag experiment; it was not part of the final repaired patch.
 
@@ -266,13 +266,13 @@ The full sequence of scored experiments makes the outcome easier to place. Mixed
 | Adaptive schedule + mixed chunking | 1.0241× |
 | Fused classification + repaired attention preparation | 1.0224× |
 
-These are separate recorded runs, not additive gains or a controlled scaling curve. The [archived best-result review](evidence/fused-result.md) and [final-result review](evidence/repaired-result.md) preserve the comparison. The earlier **1.0251×** entry remained my best completed submission; the final experiment added integration evidence, but no demonstrated aggregate improvement.
+The scores cannot be added together; each row is a separate evaluation. The earlier **1.0251×** entry remained my best submission. The [best-run review](evidence/fused-result.md) and [final-run review](evidence/repaired-result.md) contain the detailed measurements.
 
-## The branches I did not promote {#dead-ends}
+## Other things I tried or considered {#dead-ends}
 
 The route from mapping to attention fusion was only the main thread. Alongside it, I investigated prefill GEMMs, tokenization, drafting and other scheduling changes. These branches explain why the final patch stayed relatively narrow.
 
-| Direction | Why it was considered | What stopped promotion |
+| Direction | Why it looked useful | Why it stayed out |
 | :--- | :--- | :--- |
 | Expand NVFP4 weights, then use BF16 GEMM for large prefill | A different compute regime might suit large chunks | Numerical failures and poor complete-path local performance; no demonstrated serving benefit |
 | Prefix-specialized Marlin scheduling | Avoid generic expert-parallel overhead | An unexplained watchdog stall; a later combined pass did not establish a repair |
@@ -283,11 +283,11 @@ The route from mapping to attention fusion was only the main thread. Alongside i
 | Make route COUNT a runtime argument | Avoid compiling a new classifier variant for each uncaptured count | Unknown frequency and cost in serving; not implemented in the final patch |
 | Replace the attention implementation | Potentially reduce attention's larger streaming cost | Substantial numerical, workspace, synchronization and target-hardware validation work remained |
 
-Some branches failed numerical tests; others passed but offered weak performance evidence, and some never reached a serving experiment. I kept those outcomes separate. In particular, the passing fused-plus-mixed checks could not be combined into an all-load score for a configuration I never submitted to that evaluation.
+The table includes both implemented experiments and ideas that stopped at investigation. Mixed chunking came closest to another final submission: the fused combination passed individual checks, but I used the last scored slot for the attention repair instead.
 
-Public reports helped frame those decisions. alygg77's negative-results document and thethings.ai's projection worklog supplied counterexamples to assuming that less traffic, extra overlap or a better local proxy must improve the measured workload. The larger attention branch examined vjeux's public implementation and its derivatives; it was left unported. Those sources deserve credit even where the result was a decision not to adopt their technique. [15](#ref-alternatives)
+alygg77's negative-results document and thethings.ai's projection worklog were useful reading here: they describe cases where less traffic or more overlap did not deliver the expected improvement. The larger attention investigation examined vjeux's public implementation and its derivatives, but there was too much porting and H200 validation left to finish. [15](#ref-alternatives)
 
-<aside class="sidenote"><strong>Negative results are useful results</strong> “This candidate failed” and “this entire idea can never work” are very different conclusions. The table records the former without claiming the latter.</aside>
+<aside class="sidenote"><strong>Worth revisiting</strong> A different runtime, more target-hardware access or a better implementation could change several of these outcomes. The table describes where this project stopped.</aside>
 
 ## What I would carry into the next project {#lessons}
 
@@ -299,45 +299,40 @@ The result I can claim is a best recorded **2.51% improvement on the challenge�
 
 ## Reading beside the experiments {#reading}
 
-For a reader following the same questions, this sequence connects GPU fundamentals to the issues in the experiments. These links are further reading. The measured claims above come from the pinned source, local artifacts and official results. The [annotated source ledger](sources.html) also records the papers, exact repository revisions, reviewed reports and limits of the original reading coverage.
+If you want to work through the ideas in this post, these are useful places to start. This is a suggested reading path, not a list of courses I completed during the competition. The [annotated bibliography](sources.html) has the papers, code revisions and public reports behind the experiments.
 
 | Question to take into the material | Resource | How it connects |
 | :--- | :--- | :--- |
 | What does a tile change besides arithmetic count? | [Si Böhm: CUDA matmul worklog](https://siboehm.com/articles/22/CUDA-MMM) | Build an intuition for reuse, thread mapping and measured iteration. |
-| How do memory movement and compute fit together? | [Aleksa Gordić: matmul](https://www.aleksagordic.com/blog/matmul) | Further reading and a visual teaching reference for this revised article; not a source of the submitted patch. |
+| How do memory movement and compute fit together? | [Aleksa Gordić: matmul](https://www.aleksagordic.com/blog/matmul) | A visual explanation of matrix multiplication, and a presentation reference for this article. |
 | Where do threads, warps and reductions fit? | [CMU 15-442/642: GPU Architecture & CUDA Programming](https://mlsyscourse.org/slides/06-CUDA-programming.pdf) | Background for the launch and reduction discussion. |
-| How do layouts map logical work onto threads? | [CMU: Data Layouts](https://mlsyscourse.org/slides/data_layout/) | A companion to reading compiler layouts, not a diagnosis of this bug. |
+| How do layouts map logical work onto threads? | [CMU: Data Layouts](https://mlsyscourse.org/slides/data_layout/) | Background for understanding the compiler layouts behind a reduction. |
 | Why can fusion save traffic and launches? | [Triton: Fused Softmax](https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html) | A small runnable example before reasoning about stateful KV stores. |
 | What sits outside the model operator? | [CMU: LLM Serving, Part 1](https://mlsyscourse.org/slides/14-LLM-serving-part1.pdf) | Batching and cache concepts behind the serving loop. |
-| How can scheduling specialize work on a GPU? | [CMU 15-779: Warp Specialization](https://www.cs.cmu.edu/~zhihaoj2/15-779/slides/06-warp-specialization.pdf) | Further study; warp specialization was not implemented in this patch. |
+| How can scheduling specialize work on a GPU? | [CMU 15-779: Warp Specialization](https://www.cs.cmu.edu/~zhihaoj2/15-779/slides/06-warp-specialization.pdf) | A next topic to explore after tiling and launch scheduling. |
 | When can a dependent kernel read its inputs? | [NVIDIA: Programmatic Dependent Launch](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/programmatic-dependent-launch.html) | Background for auditing the producer/FA3 consumer boundary. |
-| What does removing an intermediate handoff buy? | [humans&: GPU-accelerated Weight Teleportation](https://humansand.ai/blog/gpu-accelerated-weight-teleportation) | A separate RL systems case study; no weight-sync mechanism was ported here. |
-
-### Following a post to its evidence
-
-X was useful for discovery, not as a benchmark authority. The research supplement followed announcements by @pranjalssh and @lmsysorg to the LMSYS Muse megakernel article, and @NathenFernandes to a public projection implementation. Rohan Arun's post led to a research-harness PR. Direct X access was restricted, so the record distinguishes indexed leads from the primary articles and code that could actually be inspected. The megakernel example targeted GB300, and none of these social claims establishes an H200 serving gain for my patch. [16](#ref-social)
+| What does removing an intermediate handoff buy? | [humans&: GPU-accelerated Weight Teleportation](https://humansand.ai/blog/gpu-accelerated-weight-teleportation) | The same systems question in a different setting: RL weight synchronization. |
 
 ## Sources, attribution & reproduction {#sources}
 
-The references below support the nearby claims. The [full source ledger](sources.html) separates implementation evidence, prior art, social discovery and suggested study; it includes the relevant screened repositories without presenting them as adopted work. [Download the ledger](sources.md).
+The references below link to the methods, code and experiment records discussed above. Additional reports and links found during research are in the [annotated bibliography](sources.html). [Download it as Markdown](sources.md).
 
 <ol class="references">
 <li id="ref-contract"><strong>Competition contract.</strong> <a href="https://openkernelchallenge.dev/llms.txt">Official serving documentation</a>. The project pinned SGLang <code>297e54fd105e974cdf401e5b4d20253a22c16f90</code>. Results here describe saved November 2026 evaluations, not a live leaderboard.</li>
-<li id="ref-system"><strong>Serving and drafting foundations.</strong> Zheng et al., <a href="https://arxiv.org/abs/2312.07104v2">SGLang</a> (2024); Chen, Liang and Liu, <a href="https://arxiv.org/abs/2602.06036v2">DFlash</a> (2026). For this deployment, see the <a href="https://huggingface.co/RadixArk/Muse-Spark-Open-DFlash2">Muse DFlash2 model card</a> and <a href="sources.html#implementation">pinned implementation map</a>. The papers are background, not evidence of this patch's score.</li>
-<li id="ref-amdahl"><strong>Component versus system speedup.</strong> Amdahl (1967), <a href="https://doi.org/10.1145/1465482.1465560">Validity of the single processor approach to achieving large scale computing capabilities</a>. The equation above uses a simplified fixed-work model.</li>
+<li id="ref-system"><strong>Serving and drafting foundations.</strong> Zheng et al., <a href="https://arxiv.org/abs/2312.07104v2">SGLang</a> (2024); Chen, Liang and Liu, <a href="https://arxiv.org/abs/2602.06036v2">DFlash</a> (2026). For this deployment, see the <a href="https://huggingface.co/RadixArk/Muse-Spark-Open-DFlash2">Muse DFlash2 model card</a> and <a href="sources.html#implementation">pinned implementation map</a>.</li>
+<li id="ref-amdahl"><strong>Component versus system speedup.</strong> Amdahl (1967), <a href="https://doi.org/10.1145/1465482.1465560">Validity of the single processor approach to achieving large scale computing capabilities</a>.</li>
 <li id="ref-marlin"><strong>Existing expert implementation.</strong> Frantar et al., <a href="https://arxiv.org/abs/2408.11743v1">MARLIN</a> (2024), and SGLang's later <a href="https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/srt/layers/muse_spark/muse_spark_fp4_moe.py">NVFP4 expert module</a> and <a href="https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/srt/models/muse_spark.py">Muse model</a> at the competition pin. The paper's original kernel is distinct from this MoE adaptation.</li>
-<li id="ref-evidence"><strong>Project record.</strong> <a href="evidence/CLAIM_MAP.md">Claim-to-artifact map</a>, with paths and SHA256 hashes for the project reports and patches used in this article, including the <a href="evidence/mapping.patch">initial mapping change</a>. <a href="evidence/source-inventory.json">Source inventory</a> records the audited evidence; it is not an assertion that every vendored SGLang file was read.</li>
-<li id="ref-prior"><strong>Scheduling prior art.</strong> <a href="https://github.com/georgxzh/muse-kernel-challenge/blob/890fa976c031b2433a5826d02c9355c25fa21efe/README.md">georgxzh's technical write-up</a> (<code>890fa976</code>), <a href="https://github.com/alygg77/okc-muse-spark-kernels/blob/6cae49a639ee6d14b929a5fd4a63c627f96d7dc0/docs/H200_MEASURED_FACTS.md">alygg77's H200 measured facts</a> (<code>6cae49a6</code>) and <a href="https://github.com/hariappi/okc-muse-spark-kernels/blob/a3ebb0f2f027f07f38b063c6a74ac355a6b38848/README.md">hariappi's kernel/serving report</a> (<code>a3ebb0f2</code>). Their component evidence motivated this investigation; it is not a measurement of my serving patch.</li>
-<li id="ref-precedents"><strong>Cross-project lessons.</strong> <a href="https://github.com/Jerry2423/MoE-Kernel-Agent/tree/86c1e3f96d6478c3feed5b4f04f76810446618b8">GEMM People / MoE Kernel Agent</a> and <a href="https://github.com/charleshong3/nki-moe-7013/tree/751a7bf592a319600f6de679f354462eec74d704">NKI team 7013</a>. The project audit records report-level reading and transferred principles, not a full code study or a port. Exact scopes appear in the <a href="sources.html#prior-art">ledger</a>.</li>
+<li id="ref-evidence"><strong>Project record.</strong> <a href="evidence/CLAIM_MAP.md">Claim-to-artifact map</a>, with paths and SHA256 hashes for the project reports and patches used in this article, including the <a href="evidence/mapping.patch">initial mapping change</a>. <a href="evidence/source-inventory.json">Source inventory</a> lists the reports and source files used for this article.</li>
+<li id="ref-prior"><strong>Scheduling prior art.</strong> <a href="https://github.com/georgxzh/muse-kernel-challenge/blob/890fa976c031b2433a5826d02c9355c25fa21efe/README.md">georgxzh's technical write-up</a> (<code>890fa976</code>), <a href="https://github.com/alygg77/okc-muse-spark-kernels/blob/6cae49a639ee6d14b929a5fd4a63c627f96d7dc0/docs/H200_MEASURED_FACTS.md">alygg77's H200 measured facts</a> (<code>6cae49a6</code>) and <a href="https://github.com/hariappi/okc-muse-spark-kernels/blob/a3ebb0f2f027f07f38b063c6a74ac355a6b38848/README.md">hariappi's kernel/serving report</a> (<code>a3ebb0f2</code>).</li>
+<li id="ref-precedents"><strong>Cross-project lessons.</strong> <a href="https://github.com/Jerry2423/MoE-Kernel-Agent/tree/86c1e3f96d6478c3feed5b4f04f76810446618b8">GEMM People / MoE Kernel Agent</a> and <a href="https://github.com/charleshong3/nki-moe-7013/tree/751a7bf592a319600f6de679f354462eec74d704">NKI team 7013</a>. These reports informed the routing-fusion and rounding discussions; details are in the <a href="sources.html#prior-art">bibliography</a>.</li>
 <li id="ref-fused"><strong>Best completed run.</strong> <code>68283766046b49f0</code>, aggregate 1.0251. Patch <code>a2d84a8290b0…</code>. <a href="evidence/fused-result.md">Archived result review</a>.</li>
 <li id="ref-attention-papers"><strong>Attention's underlying methods.</strong> Zhang and Sennrich, <a href="https://arxiv.org/abs/1910.07467v1">RMSNorm</a> (2019); Su et al., <a href="https://arxiv.org/abs/2104.09864v5">RoFormer / RoPE</a> (2023 revision); Shah et al., <a href="https://arxiv.org/abs/2407.08608v2">FlashAttention-3</a> (2024). Full bibliographic details are in the <a href="sources.html#papers">paper list</a>.</li>
-<li id="ref-attention-code"><strong>Actual fusion and launch paths.</strong> SGLang's <a href="https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/kernels/ops/attention/muse_spark_qk_norm_rope_store.py">QK/RoPE/store implementation</a> and <a href="https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/srt/layers/attention/flashattention_backend.py">FA3 backend</a>. The <a href="sources.html#implementation">five-file FA3 source trail</a> uses <code>sgl-attn f89bc230</code>; the <a href="evidence/fa3-feasibility-review.md">archived feasibility review</a> explains the source-level ordering argument. Its earlier validation status and COUNT estimate are historical; the ledger records the later interpretation.</li>
+<li id="ref-attention-code"><strong>Actual fusion and launch paths.</strong> SGLang's <a href="https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/kernels/ops/attention/muse_spark_qk_norm_rope_store.py">QK/RoPE/store implementation</a> and <a href="https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/srt/layers/attention/flashattention_backend.py">FA3 backend</a>. The <a href="sources.html#implementation">five-file FA3 source trail</a> uses <code>sgl-attn f89bc230</code>; the <a href="evidence/fa3-feasibility-review.md">archived feasibility review</a> explains the source-level ordering argument. Corrections to that early review are noted in the bibliography.</li>
 <li id="ref-conversion"><strong>Version-specific FP8 conversion.</strong> <a href="evidence/variant-a-review.md">Independent A review</a>, section “Corrections,” records the PyTorch 2.14.1 header, hash and conversion function. Its conversion correction remains relevant; the later boundary failures superseded its initial candidate-level “no blocker” verdict.</li>
 <li id="ref-numerics"><strong>Floating-point background.</strong> NVIDIA, <a href="https://docs.nvidia.com/cuda/floating-point/index.html">Floating Point and IEEE 754 Compliance</a>, sections 2.2 and 3, on order-dependent results and dot-product implementations. The project-specific diagnosis is supported separately by the repair evidence.</li>
-<li id="ref-repair"><strong>Numerical repair.</strong> <a href="evidence/repair-review.md">Final source and local review</a>, <a href="evidence/dense-sweep-review.md">independent dense-sweep addendum</a>, and <a href="evidence/repair-delta.patch">the repair delta from blocked B</a>. Historical statements about pending H200 validation describe the time those reviews were written; the final run subsequently passed.</li>
-<li id="ref-result"><strong>Final completed run.</strong> <code>cfa908f197674235</code>, aggregate 1.0224. Patch <code>04ec69722720…</code>. <a href="evidence/repaired-result.md">Archived result review</a>, <a href="evidence/submission-decision.json">final-selection extract</a>, <a href="evidence/submission-method.md">submission technical note</a> and <a href="evidence/results.csv">chart data</a>. The extract records the queued checks at selection; the completed result supersedes the technical note’s pending-validation status. No raw prompts, model weights or credentials are included in this notebook.</li>
-<li id="ref-alternatives"><strong>Counterexamples and unadopted work.</strong> <a href="https://github.com/alygg77/okc-muse-spark-kernels/blob/6cae49a639ee6d14b929a5fd4a63c627f96d7dc0/docs/NEGATIVE_RESULTS.md">alygg77's negative-results report</a>, <a href="https://thethings.ai/p/okc/muse-bf16-proj-report">thethings.ai's projection worklog</a>, and <a href="https://github.com/vjeux/okc-2026/tree/f35a41ee1c13e316dabbf772830d47b23b453393">vjeux's public attention implementation</a>. Their experiments are credited to their authors and are not included in my score table.</li>
-<li id="ref-social"><strong>X discovery, followed to primary sources.</strong> Pranjal Shankhdhar / LMSYS, <a href="https://www.lmsys.org/blog/2026-11-05-muse-spark-open-ultrafast">Muse Spark Open Ultrafast</a>; Nathen Fernandes, <a href="https://github.com/NathenFernandes/muse-bf16-proj/blob/86aff75e6aca72511bf9b41b6dc190bf1e763373/README.md">projection write-up</a>; Rohan Arun, <a href="https://x.com/RohanArun/status/2114830856393027974">X post</a> and <a href="https://github.com/rohanarun/Auto-research-agent/pull/6">linked PR</a>. The <a href="sources.html#social-trail">discovery ledger</a> records the mirror/direct-access limits and screened leads.</li>
+<li id="ref-repair"><strong>Numerical repair.</strong> <a href="evidence/repair-review.md">Final source and local review</a>, <a href="evidence/dense-sweep-review.md">independent dense-sweep addendum</a>, and <a href="evidence/repair-delta.patch">the repair delta from blocked B</a>. These reviews were written before the final H200 result.</li>
+<li id="ref-result"><strong>Final completed run.</strong> <code>cfa908f197674235</code>, aggregate 1.0224. Patch <code>04ec69722720…</code>. <a href="evidence/repaired-result.md">Archived result review</a>, <a href="evidence/submission-decision.json">final-selection extract</a>, <a href="evidence/submission-method.md">submission technical note</a> and <a href="evidence/results.csv">chart data</a>. The extract records the queued checks at selection; the completed result supersedes the technical note’s pending-validation status.</li>
+<li id="ref-alternatives"><strong>Counterexamples and unadopted work.</strong> <a href="https://github.com/alygg77/okc-muse-spark-kernels/blob/6cae49a639ee6d14b929a5fd4a63c627f96d7dc0/docs/NEGATIVE_RESULTS.md">alygg77's negative-results report</a>, <a href="https://thethings.ai/p/okc/muse-bf16-proj-report">thethings.ai's projection worklog</a>, and <a href="https://github.com/vjeux/okc-2026/tree/f35a41ee1c13e316dabbf772830d47b23b453393">vjeux's public attention implementation</a>.</li>
 </ol>
 
-<p class="colophon">Written from the project record · Citations audited 22 November 2026<br>Original diagrams and prose. Layout and visual teaching references: <a href="https://humansand.ai/blog/gpu-accelerated-weight-teleportation">humans&amp;</a> and <a href="https://siboehm.com/articles/22/CUDA-MMM">Si Böhm</a>, plus <a href="https://www.aleksagordic.com/blog/matmul">Aleksa Gordić</a>. Figures were drawn for this project, not copied from those articles. Built as an independent companion to my website.</p>
+<p class="colophon">22 November 2026<br>The diagrams were drawn for this project. The visual explanations and page design were inspired by <a href="https://siboehm.com/articles/22/CUDA-MMM">Si Böhm</a>, <a href="https://www.aleksagordic.com/blog/matmul">Aleksa Gordić</a> and <a href="https://humansand.ai/blog/gpu-accelerated-weight-teleportation">humans&amp;</a>.</p>
