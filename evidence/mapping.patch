@@ -1,0 +1,58 @@
+diff --git a/python/sglang/srt/layers/muse_spark/muse_spark_fp4_moe.py b/python/sglang/srt/layers/muse_spark/muse_spark_fp4_moe.py
+index 41c463dcfa..a9d06b3f6c 100644
+--- a/python/sglang/srt/layers/muse_spark/muse_spark_fp4_moe.py
++++ b/python/sglang/srt/layers/muse_spark/muse_spark_fp4_moe.py
+@@ -17,6 +17,8 @@ from __future__ import annotations
+ from typing import TYPE_CHECKING, Optional
+ 
+ import torch
++import triton
++import triton.language as tl
+ from torch import nn
+ 
+ from sglang.kernels.ops.communication.muse_spark_moe_finalize_all_reduce import (
+@@ -53,6 +55,32 @@ _MARLIN_SHAPE_ALIGNMENT = 64
+ _MARLIN_BLOCK_SIZE_M_CANDIDATES = (8, 16, 32, 48, 64)
+ 
+ 
++@triton.jit
++def _map_local_experts_kernel(
++    ids, expert_map, output, count, BLOCK: tl.constexpr
++):
++    offsets = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
++    global_ids = tl.load(ids + offsets, mask=offsets < count, other=-1)
++    local_ids = tl.load(
++        expert_map + tl.maximum(global_ids, 0),
++        mask=(offsets < count) & (global_ids >= 0),
++        other=-1,
++    )
++    tl.store(output + offsets, local_ids, mask=offsets < count)
++
++
++def _map_local_experts(
++    topk_ids: torch.Tensor, expert_map: torch.Tensor
++) -> torch.Tensor:
++    topk_ids = topk_ids.contiguous()
++    output = torch.empty_like(topk_ids)
++    if topk_ids.numel():
++        _map_local_experts_kernel[(triton.cdiv(topk_ids.numel(), 256),)](
++            topk_ids, expert_map, output, topk_ids.numel(), BLOCK=256
++        )
++    return output
++
++
+ def _resolve_moe_runner_backend():
+     backend = get_moe_runner_backend()
+     if not backend.is_auto():
+@@ -403,7 +431,10 @@ class MuseSpark1xFp4Experts(nn.Module):
+ 
+         local_topk_ids = topk_ids.to(torch.int32)
+         if expert_map is not None:
+-            local_topk_ids = _map_topk_ids_to_local_experts(local_topk_ids, expert_map)
++            if local_topk_ids.is_cuda:
++                local_topk_ids = _map_local_experts(local_topk_ids, expert_map)
++            else:
++                local_topk_ids = _map_topk_ids_to_local_experts(local_topk_ids, expert_map)
+         local_topk_ids = local_topk_ids.contiguous()
+         topk_weights = topk_scores.to(torch.float32).contiguous()
+ 

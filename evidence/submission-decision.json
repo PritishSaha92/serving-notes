@@ -1,0 +1,33 @@
+{
+  "scope": "Editorial extract of the recorded selection; not a live job-status report.",
+  "source": "serving/builder-artifacts/final-submit-20261120/ACTUAL_FINAL_SELECTION.json",
+  "source_sha256": "fac9668f33198a41f93322dbc4bb9a706f3eebc094fb1c1900dcffabc53dafc5",
+  "utc": "2026-11-20T05:22:14.394162+00:00",
+  "decision": "submit",
+  "candidate": "adaptive32fused-qkvstore-repair-04ec69722720",
+  "patch_sha256": "04ec6972272094554f554bc864d08a872588e5e982acc8b1cbb87f447bef5fe2",
+  "flags_sha256": "17501b5dcb9ff415c56c83f5d720521b47c4c7f59de9c49c1d9a7a4115d261c4",
+  "cli_overrides": {},
+  "checks_at_selection": {
+    "1ca49f01cff9467a": {
+      "status": "queued",
+      "passed": null,
+      "score": null
+    },
+    "f8b1e9877ac54ef9": {
+      "status": "queued",
+      "passed": null,
+      "score": null
+    },
+    "70bd81d1439e4a56": {
+      "status": "queued",
+      "passed": null,
+      "score": null
+    },
+    "3c9f2dbf76334fa3": {
+      "status": "queued",
+      "passed": null,
+      "score": null
+    }
+  }
+}

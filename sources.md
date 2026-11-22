@@ -118,6 +118,8 @@ The longer preparation catalog also listed vLLM, Orca, Sarathi-Serve, NanoFlow, 
 - [Source inventory](evidence/source-inventory.json): original project paths, sizes and full SHA256 hashes, including the initial reading register, later addendum and implementation reviews.
 - [Best completed evaluation](evidence/fused-result.md) and [final repaired evaluation](evidence/repaired-result.md): the source of the article's reported serving ratios.
 - [Repair source/local review](evidence/repair-review.md), [independent dense-sweep addendum](evidence/dense-sweep-review.md), and [repair delta](evidence/repair-delta.patch): final numerical-repair evidence.
+- [Initial mapping patch](evidence/mapping.patch): the first global-to-local GPU route lookup.
+- [Final-selection extract](evidence/submission-decision.json) and [submission technical note](evidence/submission-method.md): what was frozen, what remained queued and which risks were recorded before the scored run. These are historical decision records, not current status.
 - [Chart data](evidence/results.csv): the plotted values, with no invented uncertainty estimates.
 
 All conceptual diagrams are original; editable Excalidraw scenes accompany them. No public benchmark table is relabeled as this project's result. Public reports are credited for the ideas they supplied, while unsuccessful, unimplemented and unread branches remain identified as such.

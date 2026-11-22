@@ -20,8 +20,9 @@ Font source: https://github.com/google/fonts/tree/main/ofl/kalam
 
 ## SGLang-derived patch
 
-`evidence/repair-delta.patch` is a historical delta for the SGLang-derived
-implementation. It and its upstream code context remain under Apache License
+`evidence/repair-delta.patch` and `evidence/mapping.patch` are historical
+deltas for the SGLang-derived implementation. They and their upstream code
+context remain under Apache License
 2.0, not the root MIT license. The license text is retained in
 `licenses/SGLang-Apache-2.0.txt`.
 
@@ -29,8 +30,9 @@ Upstream: https://github.com/sgl-project/sglang
 
 Base revision: `297e54fd105e974cdf401e5b4d20253a22c16f90`.
 
-The changes in the delta select stock-compatible launch tiles and retain the
-stock fallback for an unsupported compilation family. The project used coding
+The repair delta selects stock-compatible launch tiles and retains the
+stock fallback for an unsupported compilation family. The mapping delta adds
+the initial Triton global-to-local expert-ID lookup. The project used coding
 and research agents for implementation and validation. The complete code and
 its original notices belong in the separate implementation repository; this
 notebook includes only the historical patch evidence.

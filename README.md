@@ -20,7 +20,7 @@ Then open `http://127.0.0.1:8080`. Keep this directory separate from `PritishSah
 - `index.html`: generated, fully readable static article.
 - `sources.md`, `sources.html`: annotated bibliography and research trail, including primary papers, pinned source, relevant public reports, X discovery limits and the recorded reading scopes.
 - `assets/style.css`, `assets/reader.js`: responsive design and optional enhancements.
-- `assets/diagrams/`: five original SVG diagrams and matching **Excalidraw scenes**, plus a data-driven result chart. Open any `.excalidraw` file in Excalidraw to edit it. SVG exports are generated from the same source scene primitives; they are not screenshots from the reference blogs.
+- `assets/diagrams/`: eleven original SVG diagrams and matching **Excalidraw scenes**, plus a data-driven result chart. Open any `.excalidraw` file in Excalidraw to edit it. SVG exports are generated from the same source scene primitives; they are not screenshots from the reference blogs.
 - `evidence/`: a small allowlist of project reports, chart data, an artifact hash inventory and claim map. Historical reports retain their original wording and dates.
 - `tools/`: deterministic article/diagram builders, local development server and visual QA scripts.
 

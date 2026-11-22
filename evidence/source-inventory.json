@@ -3,6 +3,16 @@
   "as_of": "2026-11-22",
   "sources": [
     {
+      "source": "serving/builder-artifacts/candidates/mapping-e8e1a61c6e0d/patch.diff",
+      "bytes": 2217,
+      "sha256": "e8e1a61c6e0d7add6aa3616bb713ceb43da3199beb0063826096711d46345846"
+    },
+    {
+      "source": "serving/builder-artifacts/final-submit-20261120/TECHNICAL_NOTE_REPAIR.md",
+      "bytes": 4118,
+      "sha256": "6a8e85b141a712565f26ef6fff34280f03d790cf7c50d5a22f5497e4249f511f"
+    },
+    {
       "source": "serving/builder-artifacts/fused-results-20261118/FUSED_COMPLETED_REVIEW.md",
       "bytes": 7234,
       "sha256": "f2d924e2d2c1abf427b392110d742450b92ccdc410185fc1bfed4374d0d9a840"
@@ -36,6 +46,11 @@
       "source": "serving/research/final-opportunity-audit/VARIANT_B_AND_COUNT_FEASIBILITY.md",
       "bytes": 11382,
       "sha256": "96d4cd2bda93e52036a4670f9eff4bccfd2be4a4c1a5e79fbf1f279513058dd0"
+    },
+    {
+      "source": "serving/builder-artifacts/final-submit-20261120/ACTUAL_FINAL_SELECTION.json",
+      "bytes": 36593,
+      "sha256": "fac9668f33198a41f93322dbc4bb9a706f3eebc094fb1c1900dcffabc53dafc5"
     },
     {
       "source": "serving/CURRENT_RESUME.md",
@@ -136,11 +151,6 @@
       "source": "serving/builder-artifacts/candidates/adaptive32fused-qkvstore-repair-04ec69722720/patch.diff",
       "bytes": 21493,
       "sha256": "04ec6972272094554f554bc864d08a872588e5e982acc8b1cbb87f447bef5fe2"
-    },
-    {
-      "source": "serving/builder-artifacts/final-submit-20261120/TECHNICAL_NOTE_REPAIR.md",
-      "bytes": 4118,
-      "sha256": "6a8e85b141a712565f26ef6fff34280f03d790cf7c50d5a22f5497e4249f511f"
     }
   ]
 }

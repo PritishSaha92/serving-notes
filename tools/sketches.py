@@ -251,6 +251,27 @@ def midpoint():
     s.text(35,494,'Schematic number line; distances are exaggerated, not fixture values.',21,GRAY)
     s.save()
 
+def repair_dispatch():
+    s=Sketch('repair-dispatch',650,'The repaired attention path selects stock-compatible tiles and restores stock cache ownership for unsupported calls')
+    s.text(25,10,'The repair is a dispatch rule, not just a different tile.',27)
+    s.box(40,85,500,75,'Mode, FA3 backend and cache eligible?',BLUE,24)
+    s.line(290,163,290,230,INK,arrow=True)
+    s.text(309,179,'yes',23,GREEN)
+    s.box(40,235,500,86,'Select the tile from stock Q + K rows\nFor this rank: 18 × T',PURPLE,24)
+    s.line(290,325,290,383,INK,arrow=True)
+    s.box(40,388,500,70,'Supported tile family: 4, 8 or 16?',PURPLE,24)
+    s.line(290,461,290,535,GREEN,arrow=True)
+    s.text(309,483,'yes',23,GREEN)
+    s.box(40,540,500,80,'Fused Q / K / V preparation\nGrid still covers all 20 × T rows',GREEN,24)
+    s.box(650,290,320,136,'Ordinary preparation\n+ backend cache write',ORANGE,25)
+    s.line(543,121,810,121,ORANGE);s.line(810,121,810,285,ORANGE,arrow=True)
+    s.text(568,83,'no',23,ORANGE)
+    s.line(543,423,645,423,ORANGE,arrow=True)
+    s.text(561,367,'no:\nM = 32',21,ORANGE)
+    s.text(650,469,'Includes the ordinary\nquery conversion.',24,ORANGE)
+    s.text(650,565,'Exactly one path\nwrites the cache.',25)
+    s.save()
+
 def evidence():
     s=Sketch('evidence-ladder',500,'Separate source, local and serving evidence instead of treating one as proof of the others')
     s.text(25,10,'What did each experiment actually test?',27)
@@ -285,6 +306,6 @@ def miniatures():
 
 def render():
     OUT.mkdir(parents=True,exist_ok=True)
-    for fn in [serving,geometry,routing,attention,cache,boundary,midpoint,evidence,miniatures]:fn()
+    for fn in [serving,geometry,routing,attention,cache,boundary,midpoint,repair_dispatch,evidence,miniatures]:fn()
 
 if __name__=='__main__':render()
