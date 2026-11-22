@@ -11,8 +11,8 @@
   },
   {
     "path": "article.md",
-    "bytes": 48469,
-    "sha256": "8b39dbbfb664620730f6a800b1c9cddf604887e23eb8b2bed0a8c73821a2a76a"
+    "bytes": 52814,
+    "sha256": "12549b68326282cd0103937d4ffff4276921fbe14f107b14d301fcc2bc44227a"
   },
   {
     "path": "assets/diagrams/attention-fusion.excalidraw",
@@ -180,9 +180,19 @@
     "sha256": "1d9a970809ac804b582a6ce7f0ebc4e7fefcbfd7ff6299cad35ee656a21be716"
   },
   {
+    "path": "assets/interactives.css",
+    "bytes": 15600,
+    "sha256": "bdab37e41aad6aea6276078f8966a7dcd253c2bc934cad8cc3078b22d6c8d26b"
+  },
+  {
+    "path": "assets/interactives.js",
+    "bytes": 28044,
+    "sha256": "ba5bb1611c5bd71c68eacf4df619adaa5191fb5ab40c84a205f05ab74693a60c"
+  },
+  {
     "path": "assets/reader.js",
-    "bytes": 1628,
-    "sha256": "edb26a246aac75b32b2862d971dd2a3ba225edd208f8bfa57523c07a1c078cfa"
+    "bytes": 3031,
+    "sha256": "c9c5ca2c464fa92a7802054ceb98163eaf1416ed24ea14ab48b97a1a09aa1123"
   },
   {
     "path": "assets/style.css",
@@ -201,8 +211,8 @@
   },
   {
     "path": "evidence/CLAIM_MAP.md",
-    "bytes": 6764,
-    "sha256": "a649b16ca9c022f6993980839a612e5ac36b386a2e23b99646fde77d02dd49c4"
+    "bytes": 8731,
+    "sha256": "fe282ab2ea622371197dde25826a3e3f8f281098e7b94dd6c287021e90470083"
   },
   {
     "path": "evidence/dense-sweep-review.md",
@@ -245,6 +255,16 @@
     "sha256": "89e4e4a10e2b69f489f389e11c554ef7581b18f84dc09c9f881e5c613dd7a26b"
   },
   {
+    "path": "evidence/rounding-example.md",
+    "bytes": 2311,
+    "sha256": "f91d7ac3083802195160ff2e6f67aff3dee3f362d17262c30d181f53672efcae"
+  },
+  {
+    "path": "evidence/rounding-observation.json",
+    "bytes": 2022,
+    "sha256": "f85a83a03264574775c78a8024f225f5f5a7be308fc24ad33264c38080a04a45"
+  },
+  {
     "path": "evidence/source-inventory.json",
     "bytes": 6284,
     "sha256": "5c8030fc7242a9a70c34ddb4e532af06779b99253cbd15c790544dc4c3716ebf"
@@ -266,8 +286,8 @@
   },
   {
     "path": "index.html",
-    "bytes": 66667,
-    "sha256": "84130bc2fc0458ec5b6b7f6eb96c1efb7f398799e1331d185fab650733d5723b"
+    "bytes": 71197,
+    "sha256": "47b42720d10895cfa0439c30e6174517e804f37a553c879a82fbf7d9b43c9208"
   },
   {
     "path": "LICENSE",
@@ -291,8 +311,8 @@
   },
   {
     "path": "README.md",
-    "bytes": 4112,
-    "sha256": "4786d7eaf56d63b8cffb316f8fd5230054fc8224689f154d7d9d74072aee8906"
+    "bytes": 5929,
+    "sha256": "fa2fa7db900cae5763d6f16463b4ee77f17643c4cb84b2f368be271b8d551e0c"
   },
   {
     "path": "requirements.txt",
@@ -321,8 +341,13 @@
   },
   {
     "path": "tools/build.py",
-    "bytes": 7947,
-    "sha256": "eee1affc32dcb6c6f1846016533b368e72e4f592f6f63aa8a0fe486cf5def476"
+    "bytes": 8105,
+    "sha256": "04b1ec2266cb6896a98c09f51c6d8d18cb069ec817627dd8c1f6da4370c48ec3"
+  },
+  {
+    "path": "tools/check_rounding_example.py",
+    "bytes": 2459,
+    "sha256": "87c45f471c9e3d7f02264219106b9b981907173377d45a77e2fd1b7e9c14fc2b"
   },
   {
     "path": "tools/collect_evidence.py",
@@ -336,8 +361,8 @@
   },
   {
     "path": "tools/package.py",
-    "bytes": 1768,
-    "sha256": "72d4ee2eab8fa16e460aa2650e55ca5b8b43c30adc097f82387bd791d373221a"
+    "bytes": 2269,
+    "sha256": "2db951ff047538c4732908f96829c605f5369a836837a93827b5e6674d4c9c23"
   },
   {
     "path": "tools/package_site.py",
@@ -346,8 +371,8 @@
   },
   {
     "path": "tools/qa.cjs",
-    "bytes": 8587,
-    "sha256": "3e6b987593ee5d04ba800836c385508c23f478baae37be89ab0f833704e1dadc"
+    "bytes": 18895,
+    "sha256": "73519b164b48b2279f47b9dfdbcbdbbae7ee288bf97ee007ef4b076a907c8718"
   },
   {
     "path": "tools/reference-preview.cjs",
@@ -366,7 +391,7 @@
   },
   {
     "path": "VERIFICATION.json",
-    "bytes": 1806,
-    "sha256": "c971d89d4ff18a7139477c4ef0083cc91193ca05b2fd22c881e27d4c01c2b93a"
+    "bytes": 2206,
+    "sha256": "e681f48585ee7532daf8c3e838eeb8a02152fa697aed67baaa74338a8f95ff49"
   }
 ]

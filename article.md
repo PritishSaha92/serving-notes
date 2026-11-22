@@ -102,9 +102,9 @@ run_marlin_for_class(large_ids, row_tile=stock_tile)
 
 The extra histogram bin keeps inactive routes from indexing with `-1`. They remain masked out regardless of that bin's count. The two execution classes must be disjoint, cover all live routes, and retain the original route weights and finalization semantics.
 
-For the six-route excerpt in the figure, a rank maps `[32, 33, 7, 32, 65, 33]` to `[0, 1, -1, 0, -1, 1]`. Suppose the full forward assigns 12 routes to local expert 0 and 50 to local expert 1. The small output keeps `[0, -1, -1, 0, -1, -1]`; the large output keeps `[-1, 1, -1, -1, -1, 1]`. Nothing is dropped or counted twice among the live routes.
+For a concrete mapping example, a rank maps `[32, 33, 7, 32, 65, 33]` to `[0, 1, -1, 0, -1, 1]`. Suppose the full forward assigns 12 routes to local expert 0 and 50 to local expert 1. The small output keeps `[0, -1, -1, 0, -1, -1]`; the large output keeps `[-1, 1, -1, -1, -1, 1]`. Nothing is dropped or counted twice among the live routes.
 
-<aside class="sidenote"><strong>Count the whole forward</strong> The six IDs are only an excerpt. The 12 and 50 come from the full histogram, not from counting the six drawn cells. Route weights stay attached to their original positions.</aside>
+<aside class="sidenote"><strong>Count the whole forward</strong> The six IDs are only an excerpt. The 12 and 50 come from the full histogram, not from counting this short example. Route weights stay attached to their original positions.</aside>
 
 The implementation runs the two classes through the first projection, applies the existing activation, then runs the classes through the second projection. It retains Marlin's packed weights, scales and arithmetic operations. The two classes can share temporary storage only if one cannot overwrite the other’s live outputs. That also has to remain true under **CUDA graph replay**: a captured sequence of GPU operations is reused with new inputs at stable addresses. A test that repeatedly replays one input can miss stale-state bugs, so the replay tests changed the routes and checked the new outputs.
 
@@ -130,15 +130,17 @@ In attention, a query **Q** is compared with keys **K** to determine how to comb
 
 On the eligible path, stock normalized Q and K, applied RoPE where needed, converted K and V for the FP8 cache, stored the cache entries, and converted Q to FP8 for FA3. Instead of replacing attention, I explored folding some of that preparation into the existing QK kernel. SGLang already contained related fusion machinery; the work here was adapting its eligible FA3 path and preserving the backend's contracts. [10](#ref-attention-code)
 
-<figure><img src="assets/diagrams/attention-fusion.svg" width="1000" height="610" alt="Stock performs QK normalization, K and V casts, cache store and query cast separately. Variant A fuses KV preparation while keeping the query cast. Variant B also emits the FP8 query. FA3 attention remains unchanged."><figcaption>Three preparation paths; the same downstream attention implementation. Box widths are schematic, not timings. <a href="assets/diagrams/attention-fusion.excalidraw" download>Editable diagram</a></figcaption></figure>
-
 **Variant A** fused the FP8 KV conversion and store while retaining a BF16 query output. The ordinary query cast remained before FA3. **Variant B** also emitted the FP8 query, making the downstream same-dtype cast a no-op. Both were built on the earlier fused expert patch, using stock launch flags.
+
+The comparison below shows where those operations went. Follow the query, key and value blocks while stepping through stock preparation; then switch to repaired B to see which temporary tensors disappear. That option includes the tile selection and fallback that I added after the numerical failures described later in the post.
+
+<figure><img src="assets/diagrams/attention-fusion.svg" width="1000" height="610" alt="Stock performs QK normalization, K and V casts, cache store and query cast separately. Variant A fuses KV preparation while keeping the query cast. Variant B also emits the FP8 query. FA3 attention remains unchanged."><figcaption>Three preparation paths; the same downstream attention implementation. Box widths are schematic, not timings. <a href="assets/diagrams/attention-fusion.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 Triton’s [fused-softmax tutorial](https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html) gives a small, runnable example of this idea: keep intermediate work in one kernel instead of repeatedly materializing tensors. In this case, however, one of the outputs was the cache that future tokens would read.
 
 ### Moving the store means taking responsibility for it
 
-The fused path had to write to the same full-attention or sliding-window cache locations as stock. Slot zero remained reserved for graph padding. Untouched slots had to remain untouched. A backend wait that protects cache ownership still had to happen before the new writer ran.
+The fused path had to write to the same full-attention or sliding-window cache locations as stock. Slot zero remained reserved for graph padding. Untouched slots had to remain untouched. A backend wait that protects cache ownership still had to happen before the new writer ran. On the next graph replay, the locations could change even though the captured operations did not. A second call had to use its own locations and preserve what the first left elsewhere.
 
 <figure><img src="assets/diagrams/cache-writes.svg" width="1000" height="560" alt="Token A writes slot 17 and token B writes slot 42. The padding row maps to reserved slot zero, which is skipped. All other cache slots remain untouched."><figcaption>Write each token to its assigned slot and leave the rest alone. The locations here are examples; the backend supplies the actual full-attention or sliding-window addresses. <a href="assets/diagrams/cache-writes.excalidraw" download>Editable diagram</a></figcaption></figure>
 
@@ -182,6 +184,25 @@ At T = 56, stock sees 1,008 rows while fusion sees 1,120. They fall on opposite 
 <div class="preset-buttons"><button type="button" data-token="51">51</button><button type="button" data-token="56">56</button><button type="button" data-token="57">57</button><button type="button" data-token="410">410</button><button type="button" data-token="455">455</button><button type="button" data-token="456">456</button></div>
 <div class="tile-values"><div>Stock Q + K<strong id="stock-rows">1,008 rows</strong><span id="stock-tile">BLOCK_M = 4</span></div><div>Original fusion Q + K + V<strong id="fused-rows">1,120 rows</strong><span id="fused-tile">BLOCK_M = 8</span></div></div>
 <p id="tile-note" aria-live="polite">Different tile families. This identifies a configuration boundary, not a prediction that every input will fail.</p>
+<div class="rounding-walkthrough" aria-labelledby="rounding-walkthrough-title">
+<h3 id="rounding-walkthrough-title">How a tiny difference becomes a different byte</h3>
+<p class="rounding-intro">A fixed example from the saved <strong>T = 410, no-RoPE</strong> failure, independent of the slider above. Stock emitted <strong>0.8125</strong>; original B emitted <strong>0.875</strong> for one query element. The adjacent BF16 values below explain how that jump is possible.</p>
+<div class="rounding-stages">
+<div class="rounding-stage" data-rounding-stage="0"><span class="diagram-label">1 · A BF16 neighbor</span><div class="rounding-pair"><div><span>Recorded stock BF16</span><strong>0.83984375</strong></div><div><span>Next BF16 value</span><strong>0.84375</strong></div></div><p>Just one BF16 step: <code>0.00390625</code>. The second value is an explanatory neighbor, not a separately captured GPU intermediate.</p></div>
+<div class="rounding-stage" data-rounding-stage="1"><span class="diagram-label">2 · At the FP8 midpoint</span><div class="number-line" role="img" aria-label="FP8 values 0.8125 and 0.875 bracket midpoint 0.84375. The stock BF16 value 0.83984375 is slightly left of that midpoint."><div class="number-track"><i class="number-tick left"></i><i class="number-tick middle"></i><i class="number-tick right"></i><b class="stock-dot" title="0.83984375"></b><b class="neighbor-dot" title="0.84375"></b></div><div class="number-labels"><span>0.8125</span><span>0.84375<br><small>midpoint</small></span><span>0.875</span></div></div><p><span class="rounding-key stock-key">● Stock value</span> falls below the midpoint. <span class="rounding-key neighbor-key">◆ Neighbor</span> lands exactly on it.</p></div>
+<div class="rounding-stage" data-rounding-stage="2"><span class="diagram-label">3 · Round to nearest, ties to even</span><div class="rounding-pair"><div><span>0.83984375 →</span><strong>0.8125 <small>0x35</small></strong></div><div><span>0.84375 →</span><strong>0.875 <small>0x36</small></strong></div></div><p>At the tie, the even low significand bit selects <code>0x36</code>. These FP8 values match the saved stock and original-B outputs.</p>
+<div class="fp8-bytes" aria-label="Recorded output bytes in E4M3 format">
+<div class="bit-field-labels" aria-hidden="true"><span>Sign</span><span>Exponent · 4 bits</span><span>Fraction · 3 bits</span></div>
+<div class="byte-label">Stock · 0.8125 · <code>0x35</code></div>
+<div class="byte-row" data-byte="35" role="img" aria-label="Stock: sign 0, exponent 0110, fraction 101"><span class="bit-sign">0</span><span class="bit-exp">0</span><span class="bit-exp">1</span><span class="bit-exp">1</span><span class="bit-exp">0</span><span class="bit-fraction">1</span><span class="bit-fraction bit-changed">0</span><span class="bit-fraction bit-changed">1</span></div>
+<div class="byte-label">Original B · 0.875 · <code>0x36</code></div>
+<div class="byte-row" data-byte="36" role="img" aria-label="Original B: sign 0, exponent 0110, fraction 110"><span class="bit-sign">0</span><span class="bit-exp">0</span><span class="bit-exp">1</span><span class="bit-exp">1</span><span class="bit-exp">0</span><span class="bit-fraction">1</span><span class="bit-fraction bit-changed">1</span><span class="bit-fraction bit-changed">0</span></div>
+<p class="byte-caption">Outlined cells differ. One stored byte changed; two of its fraction bits flipped. The sign and exponent stayed the same.</p>
+</div></div>
+</div>
+<div id="rounding-controls"></div>
+<p class="rounding-source">The line is scaled within this FP8 interval. It does not simulate RMS normalization or infer failures at other token counts. <a href="evidence/rounding-example.md">Recorded values, arithmetic and provenance</a> · <a href="assets/diagrams/rounding-midpoint.svg">Static explanation</a></p>
+</div>
 </div>
 
 Targeted tests found query-byte failures in both original candidates. Variant A failed seven eager cases and eleven graph cases; Variant B failed two eager cases, at T = 410 and T = 416. The failures were finite values, independently reproducible—not just a disagreement over NaN representation. A’s T = 56 boundary can occur with seven eight-token verification requests. The larger T = 410 and T = 416 cases tested the kernel beyond the ordinary 32-user, eight-token verify regime; I retained those failures rather than exempting those inputs.

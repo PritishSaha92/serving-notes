@@ -1,0 +1,76 @@
+{
+  "source": "serving/builder-artifacts/variant-b/block-boundary-diagnosis-v1.json",
+  "source_sha256": "36c84cf70ea8a52c67c96209a97febaaceb084c21b628b9ae07b448b3d2b925e",
+  "observation": {
+    "candidate": "B",
+    "T": 410,
+    "rope": false,
+    "stock_block": [
+      8,
+      4
+    ],
+    "fused_block": [
+      16,
+      4
+    ],
+    "all_inputs_finite": true,
+    "attempts": [
+      {
+        "repeat": 0,
+        "query_mismatch_bytes": 1,
+        "query_mismatch_elements": 1,
+        "k_mismatch_bytes": 0,
+        "final_fp8_query_mismatch_bytes": 1,
+        "samples": [
+          {
+            "token": 404,
+            "column": 627,
+            "candidate": 0.875,
+            "reference": 0.8125,
+            "stock_bf16": 0.83984375,
+            "stock_fp8": 0.8125,
+            "finite": true
+          }
+        ]
+      },
+      {
+        "repeat": 1,
+        "query_mismatch_bytes": 1,
+        "query_mismatch_elements": 1,
+        "k_mismatch_bytes": 0,
+        "final_fp8_query_mismatch_bytes": 1,
+        "samples": [
+          {
+            "token": 404,
+            "column": 627,
+            "candidate": 0.875,
+            "reference": 0.8125,
+            "stock_bf16": 0.83984375,
+            "stock_fp8": 0.8125,
+            "finite": true
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "query_mismatch_bytes": 1,
+        "query_mismatch_elements": 1,
+        "k_mismatch_bytes": 0,
+        "final_fp8_query_mismatch_bytes": 1,
+        "samples": [
+          {
+            "token": 404,
+            "column": 627,
+            "candidate": 0.875,
+            "reference": 0.8125,
+            "stock_bf16": 0.83984375,
+            "stock_fp8": 0.8125,
+            "finite": true
+          }
+        ]
+      }
+    ],
+    "fixture_path": "builder-artifacts/variant-b/boundary-failure-B-T410-rope0.pt",
+    "fixture_sha256": "dcca304a928e5eb763d5e14d27c7b82536cb8dd5204a93fce97bed518dcc80d2"
+  }
+}

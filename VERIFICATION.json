@@ -8,7 +8,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5536,
+      "words": 6295,
       "marginNotes": 16,
       "errors": []
     },
@@ -18,7 +18,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5536,
+      "words": 6295,
       "marginNotes": 16,
       "errors": []
     },
@@ -28,7 +28,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5536,
+      "words": 6321,
       "marginNotes": 16,
       "errors": []
     },
@@ -38,7 +38,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5536,
+      "words": 6321,
       "marginNotes": 16,
       "errors": []
     },
@@ -48,7 +48,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5536,
+      "words": 6321,
       "marginNotes": 16,
       "errors": []
     }
@@ -92,8 +92,10 @@
   ],
   "numberedReferences": 15,
   "inlineCitations": 19,
-  "localLinksChecked": 40,
+  "localLinksChecked": 41,
   "noJavaScript": "passed",
   "directFileOpen": "passed",
-  "excalidrawScenes": 11
+  "excalidrawScenes": 11,
+  "interactiveIllustrations": "Four explanations: row packing and exact route partition with weights; stock/A/repaired-B tensor copies and fallback; two-call cache ownership; dispatch and recorded rounding example. Keyboard, reset, print and no-JS fallbacks passed at five widths.",
+  "roundingExampleArithmetic": "passed; recorded samples, BF16 adjacency, E4M3 ties-to-even and plotted position"
 }

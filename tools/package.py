@@ -1,6 +1,7 @@
 """Package the standalone notebook, excluding local tooling state and previews."""
 from pathlib import Path
 import hashlib, json, zipfile
+from check_rounding_example import main as check_rounding_example
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT.parent / 'muse-serving-notebook-private.zip'
@@ -14,6 +15,12 @@ for record in sources['sources']:
 
 qa = json.loads((ROOT/'.preview/qa.json').read_text(encoding='utf-8'))
 assert qa['status'] == 'passed'
+check_rounding_example()
+rounding_record = json.loads((ROOT/'evidence/rounding-observation.json').read_text(encoding='utf-8'))
+rounding_source = ROOT.parent / rounding_record['source']
+if rounding_source.exists():
+    assert hashlib.sha256(rounding_source.read_bytes()).hexdigest() == rounding_record['source_sha256']
+qa['roundingExampleArithmetic'] = 'passed; recorded samples, BF16 adjacency, E4M3 ties-to-even and plotted position'
 (ROOT/'VERIFICATION.json').write_text(json.dumps(qa, indent=2)+'\n', encoding='utf-8')
 
 files = sorted(p for p in ROOT.rglob('*') if p.is_file()
