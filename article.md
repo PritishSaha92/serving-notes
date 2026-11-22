@@ -6,7 +6,7 @@ My earlier expert-scheduling submission scored **1.0251×** against stock SGLang
 
 I entered the serving track to learn how GPU optimization behaves inside a real inference system. This article follows that work from expert routing to a one-byte rounding discrepancy, and from local timing to the official eight-H200 evaluation. It is a record of what the experiments support, including the ideas I stopped pursuing.
 
-<aside class="sidenote"><strong>How this project was built</strong> I used coding and research agents for source investigation, implementation, probes and independent reviews. “I” refers to the project I ran; it does not mean I hand-wrote every kernel or personally completed every resource in the reading list.</aside>
+<aside class="sidenote" data-follow="1"><strong>How this project was built</strong> I used coding and research agents for source investigation, implementation, probes and independent reviews. “I” refers to the project I ran; it does not mean I hand-wrote every kernel or personally completed every resource in the reading list.</aside>
 
 The working question became: **what unnecessary work can I remove while preserving the computation that the rest of the server expects?** That question is less glamorous than replacing an entire attention kernel. It also turned out to be harder than it sounds.
 
@@ -16,7 +16,7 @@ The challenge's serving workload used Muse Spark Open with NVFP4 weights, SGLang
 
 Those details change the optimization problem. A model forward is only part of a conversation. Before a target-model verification step, the system must prepare draft tokens and metadata. During the step, attention reads the existing cache and experts process routed tokens. Afterward, verification determines what to accept, and state must remain correct for the next turn. The SGLang and DFlash papers provide background; the pinned source and Muse-specific DFlash2 card define the implementation used here. [2](#ref-system)
 
-<figure><img src="assets/diagrams/serving-path.svg" width="1000" height="430" alt="A request passes through scheduling, prefill, draft and target verification, then acceptance and cache updates before continuing the conversation."><figcaption>The unit of optimization is a serving loop. This is a conceptual dependency diagram, not a measured execution timeline. <a href="assets/diagrams/serving-path.excalidraw" download>Editable diagram</a></figcaption></figure>
+<figure><img src="assets/diagrams/serving-path.svg" width="1000" height="610" alt="A request passes through scheduling, prefill, draft and target verification, then acceptance and cache updates before continuing the conversation."><figcaption>The unit of optimization is a serving loop. This is a conceptual dependency diagram, not a measured execution timeline. <a href="assets/diagrams/serving-path.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 A standalone kernel benchmark answers a narrow question: how long does this operator take on these inputs? A serving benchmark also includes scheduling, draft execution, communication, memory pressure and the sequence of requests. A faster operator may occupy little of the exposed critical path, or its integration may introduce work elsewhere.
 
@@ -34,11 +34,17 @@ I could run local probes on an **L40**. The official evaluation ran on **H200s**
 
 I kept three categories separate: source reasoning, local experiments, and official serving results. A source audit could justify a test; a local test could reject an idea; an official pass could validate the submitted bundle on that workload. None of those automatically proved a universal speedup.
 
+<aside class="sidenote"><strong>Two different questions</strong> The L40 could reveal a wrong byte or an indexing error. It could not tell me whether a change improved FA3, PDL and communication on eight H200s.</aside>
+
 ## Expert parallelism changes the size of the problem {#experts}
 
 I started with the expert path. Muse's mixture-of-experts layer routes each token to eight of 256 experts. With eight-way expert parallelism, a rank owns 32 experts. The original route IDs are global; the rank has to map them into its local expert numbering and mark routes owned elsewhere as inactive.
 
 The model dimensions in the pinned implementation were `hidden_size = moe_hidden_size = 4096`. On the expert path, the first matrix multiplication produces the gate and up projections together: **N = 8192, K = 4096**. The second projects back with **N = 4096, K = 4096**. Getting these dimensions right mattered; one research report initially used incorrect full dimensions and later issued an erratum. [4](#ref-marlin) [5](#ref-evidence)
+
+To see why the route count matters, write the first expert projection as a matrix multiplication. Each routed activation supplies one row of Aₑ. One output entry is the dot product of that row with a column of the expert’s logical weight matrix. Quantized packing changes how the weights are stored, but it does not change these logical dimensions.
+
+<figure><img src="assets/diagrams/expert-geometry.svg" width="1000" height="620" alt="Routed activations have m_e rows and 4096 columns. Multiplying by logical weights of shape 4096 by 8192 produces the gate and up projection. The route count changes the number of rows, not the weight dimensions."><figcaption>The geometry of one expert’s first projection. The highlighted row and column produce one output entry. The small grids stand in for much larger tensors. <a href="assets/diagrams/expert-geometry.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 The important scheduling quantity was not just the number of tokens in the forward. It was the number of routes assigned to **each local expert**. Two forwards with the same token count can produce very different expert loads.
 
@@ -46,13 +52,17 @@ Imagine two experts receiving 12 and 50 routes. A row tile sized for the busier 
 
 Here, the matrix's row dimension is the number of routed token activations for an expert; the weight dimensions stay fixed. A 12-route expert does not become a larger useful computation merely because the whole forward has hundreds of tokens. That is the reason to classify by expert occupancy rather than apply one smaller tile to the entire forward.
 
-<figure><img src="assets/diagrams/expert-routing.svg" width="1000" height="410" alt="Global routes are mapped to local experts, counted and split. Experts with at most 16 routes use a 32-row tile, while the remaining experts keep the stock tile."><figcaption>Classify whole experts by their route count. The occupancy threshold of 16 is distinct from the 32-row tile used for the small class. <a href="assets/diagrams/expert-routing.excalidraw" download>Editable diagram</a></figcaption></figure>
+<aside class="sidenote" data-paragraphs="3"><strong>Two different numbers</strong> The threshold selects the class. The tile size says how many rows that class processes at a time. In the accepted variant those numbers are 16 and 32, respectively.<img src="assets/diagrams/tile-note.svg" width="420" height="355" alt="A 12-route expert qualifies for the at-most-16 class but is processed with a 32-row tile."><span class="mini-caption">A row-slot illustration, not a timing estimate.</span></aside>
+
+<figure><img src="assets/diagrams/expert-routing.svg" width="1000" height="715" alt="Global routes are mapped to local experts, counted and split. Experts with at most 16 routes use a 32-row tile, while the remaining experts keep the stock tile."><figcaption>Classify whole experts by their route count. The occupancy threshold of 16 is distinct from the 32-row tile used for the small class. <a href="assets/diagrams/expert-routing.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 Public kernel-track reports supplied an initial lead: keep Marlin's NVFP4 computation and change the scheduling around it. The project's source register credits the public work by georgxzh, alygg77 and hariappi; those results were motivation, not measurements of my distributed serving patch. [6](#ref-prior)
 
 ### The version that survived
 
 The successful adaptive variant used a **32-row tile for experts with at most 16 routes**, retaining the stock larger tile for the other experts. The dispatch was derived from tensor dimensions, the stock tile and expert metadata. Under this model's configuration, the adaptive regime covered token counts from 116 through 512. It was not a branch on the benchmark's user labels.
+
+<aside class="sidenote"><strong>Dispatch by the problem</strong> Tensor shapes and expert occupancy are properties of the computation. “Four users” or “sixteen users” are labels from the evaluator. The optimization must work from the former.</aside>
 
 In simplified pseudocode, the partition looks like this:
 
@@ -73,6 +83,10 @@ run_marlin_for_class(large_ids, row_tile=stock_tile)
 ```
 
 The extra histogram bin keeps inactive routes from indexing with `-1`. They remain masked out regardless of that bin's count. The two execution classes must be disjoint, cover all live routes, and retain the original route weights and finalization semantics.
+
+For the six-route excerpt in the figure, a rank maps `[32, 33, 7, 32, 65, 33]` to `[0, 1, -1, 0, -1, 1]`. Suppose the full forward assigns 12 routes to local expert 0 and 50 to local expert 1. The small output keeps `[0, -1, -1, 0, -1, -1]`; the large output keeps `[-1, 1, -1, -1, -1, 1]`. Nothing is dropped or counted twice among the live routes.
+
+<aside class="sidenote"><strong>Count the whole forward</strong> The six IDs are only an excerpt. The 12 and 50 come from the full histogram, not from counting the six drawn cells. Route weights stay attached to their original positions.</aside>
 
 The implementation runs the two classes through the first projection, applies the existing activation, then runs the classes through the second projection. It retains Marlin's packed weights, scales and arithmetic operations. Sharing scratch space is valid only if one class cannot corrupt the other's live outputs and every replay reestablishes the state it needs.
 
@@ -106,7 +120,7 @@ The names are worth unpacking. A query **Q** is compared with keys **K** to dete
 
 On the eligible path, stock normalized Q and K, applied RoPE where needed, converted K and V for the FP8 cache, stored the cache entries, and converted Q to FP8 for FA3. Instead of replacing attention, I explored folding some of that preparation into the existing QK kernel. SGLang already contained related fusion machinery; the work here was adapting its eligible FA3 path and preserving the backend's contracts. [10](#ref-attention-code)
 
-<figure><img src="assets/diagrams/attention-fusion.svg" width="1000" height="510" alt="Stock performs QK normalization, K and V casts, cache store and query cast separately. Variant A fuses KV preparation while keeping the query cast. Variant B also emits the FP8 query. FA3 attention remains unchanged."><figcaption>Three preparation paths; the same downstream attention implementation. Box widths are schematic, not timings. <a href="assets/diagrams/attention-fusion.excalidraw" download>Editable diagram</a></figcaption></figure>
+<figure><img src="assets/diagrams/attention-fusion.svg" width="1000" height="610" alt="Stock performs QK normalization, K and V casts, cache store and query cast separately. Variant A fuses KV preparation while keeping the query cast. Variant B also emits the FP8 query. FA3 attention remains unchanged."><figcaption>Three preparation paths; the same downstream attention implementation. Box widths are schematic, not timings. <a href="assets/diagrams/attention-fusion.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 **Variant A** fused the FP8 KV conversion and store while retaining a BF16 query output. The ordinary query cast remained before FA3. **Variant B** also emitted the FP8 query, making the downstream same-dtype cast a no-op. Both were built on the earlier fused expert patch, using stock launch flags.
 
@@ -116,7 +130,11 @@ This resembles the motivation in Triton's [fused-softmax tutorial](https://trito
 
 The fused path had to write to the same full-attention or sliding-window cache locations as stock. Slot zero remained reserved for graph padding. Untouched slots had to remain untouched. A backend wait that protects cache ownership still had to happen before the new writer ran.
 
+<figure><img src="assets/diagrams/cache-writes.svg" width="1000" height="560" alt="Token A writes slot 17 and token B writes slot 42. The padding row maps to reserved slot zero, which is skipped. All other cache slots remain untouched."><figcaption>A cache write is an address-and-state contract. These example locations illustrate the invariant; the backend supplies the real full-attention or sliding-window locations. <a href="assets/diagrams/cache-writes.excalidraw" download>Editable diagram</a></figcaption></figure>
+
 The dispatch was deliberately narrow: eligible FA3 decode or target-verify calls, the expected unscaled FP8 cache layout, and compatible buffers. Prefill, mixed batches, incompatible cache settings and other backends retained the ordinary path. “Can this kernel compute the values?” was only half the question. The other half was “who writes the cache when this branch is not taken?”
+
+<aside class="sidenote"><strong>Exactly one writer</strong> An eligible fused call owns the cache write. An ineligible call must restore the ordinary backend write. Getting the arithmetic right is insufficient if the fallback writes twice—or never writes.</aside>
 
 There was a synchronization question too. [Programmatic Dependent Launch](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/programmatic-dependent-launch.html), or PDL, permits a dependent kernel to start before its producer fully finishes. The consumer must still wait before reading dependent data. Removing the separate query cast therefore required auditing the actual launch chain into FA3, rather than assuming that an unchanged Python call order guaranteed the needed device ordering. That audit followed the pinned launcher, preparation and consumer code, not just the attention paper. [10](#ref-attention-code)
 
@@ -127,6 +145,8 @@ Stock materializes BF16 values before the FP8 conversion. Fusing those operation
 <div class="equation">FP8(BF16(x)) ≠ FP8(x)</div>
 
 The implementation retained that intermediate rounding and checked the installed PyTorch version's saturation and NaN behavior. An early research note made an incorrect overflow claim; checking the pinned implementation corrected it. This is exactly the kind of detail that should come from the actual dependency rather than memory of a different version. [11](#ref-conversion)
+
+<aside class="sidenote" data-follow="1"><strong>Fusion is not permission to skip rounding</strong> A temporary tensor may disappear; its numerical effect may still be required.<img src="assets/diagrams/rounding-note.svg" width="420" height="290" alt="Preserve the FP32 to BF16 to FP8 conversion chain instead of converting directly from FP32 to FP8."></aside>
 
 The earlier survey had already recorded a related warning from the NKI team 7013 report: moving a BF16 materialization boundary can change the integrated result. That was a useful constraint, though it did not anticipate or explain the tile-dependent failure that came next. [7](#ref-precedents)
 
@@ -142,7 +162,9 @@ For this rank, Q has 16 heads and K has two. Stock QK preparation therefore uses
 
 At T = 56, stock sees 1,008 rows while fusion sees 1,120. They fall on opposite sides of a 1,024-row configuration boundary. At T = 410, the counts are 7,380 and 8,200, straddling another boundary at 8,192 rows.
 
-<figure><img src="assets/diagrams/rounding-boundary.svg" width="1000" height="400" alt="At 56 tokens stock uses 1008 rows and a block of 4, while the original fused path uses 1120 rows and a block of 8. Different reduction grouping can cross a rounding midpoint and change a query byte."><figcaption>A scheduling detail became a numerical difference. Changing the tile changed the compiler's reduction grouping in the controlled local probes. <a href="assets/diagrams/rounding-boundary.excalidraw" download>Editable diagram</a></figcaption></figure>
+<aside class="sidenote"><strong>Which threshold?</strong> At T = 410, stock and fusion choose different tile families. That does not mean stock changes its own family between T = 409 and T = 410. An earlier assessment made that mistake; the retained correction matters.</aside>
+
+<figure><img src="assets/diagrams/rounding-boundary.svg" width="1000" height="625" alt="At 56 tokens stock uses 1008 rows and a block of 4, while the original fused path uses 1120 rows and a block of 8. Different reduction grouping can cross a rounding midpoint and change a query byte."><figcaption>A scheduling detail became a numerical difference. Changing the tile changed the compiler's reduction grouping in the controlled local probes. <a href="assets/diagrams/rounding-boundary.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 <div class="explorer" id="tile-explorer">
 <div class="explorer-title">Explore the dispatch boundary <span>Source-derived model · not a GPU benchmark</span></div>
@@ -159,6 +181,8 @@ The controlled experiment held the saved input fixtures fixed and varied the til
 The compiler artifacts gave the mechanism substance. With one tile family, each thread accumulated four local square contributions before shuffles; another accumulated eight. FP32 addition is not associative. A small difference in the RMS statistic can push a normalized value over a BF16 midpoint. A subsequent FP8 rounding boundary can make that change visible in the final query byte.
 
 For one head's vector, the normalization scales each component by <code>1 / sqrt(mean(x²) + epsilon)</code>. Changing the grouping of the sum of squares can change that scale by a tiny amount. Most outputs still round to the same stored value. The revealing inputs are those already close to a rounding midpoint: a tiny movement can send them to the other representable value. This is why broad random tests passed before the retained boundary fixtures exposed a failure.
+
+<figure><img src="assets/diagrams/rounding-midpoint.svg" width="1000" height="530" alt="Two nearly equal normalized values fall on opposite sides of a BF16 midpoint. If subsequent FP8 conversion also separates them, the stored query bytes differ."><figcaption>Why one byte can expose a real numerical change. This number line explains the mechanism; it is deliberately not drawn as a quantitative plot of the saved fixtures. <a href="assets/diagrams/rounding-midpoint.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 I had not changed the mathematical normalization formula. I had changed the grouping of the finite-precision operations that implement it. NVIDIA's floating-point guide explains the general reduction-order issue; the controlled probes establish what happened in these particular failures. [12](#ref-numerics) [13](#ref-repair)
 
@@ -179,13 +203,17 @@ That fixed the original fixtures. A wider boundary sweep then found query/key di
 
 This was not a whitelist of benchmark sizes. The optimized path declared a family it did not support, and model dispatch restored the existing query conversion and cache writer there. The underlying wider-family arithmetic discrepancy remained unexplained; fallback avoided executing it.
 
+<aside class="sidenote"><strong>Fallback is part of the implementation</strong> The final repair did not solve every reduction discrepancy. It supported the tested tile families and sent the unsupported family through stock, including stock’s cache writer.</aside>
+
 ## A test must exercise the failure it claims to exclude {#validation}
 
 The repaired candidate passed a dense eager sweep over every T from 1 through 512, both RoPE modes, and two finite seed families: **2,048 comparisons**. Query bytes, BF16 key bytes, full cache bytes, dtypes and production stride were checked against an independently imported pinned-stock reference. Preserved failing fixtures failed before the repair and passed afterward.
 
 Separate tests covered exceptional values, tile boundaries, changing graph inputs and cache locations, padded rows, untouched slots, and actual model dispatch back to stock. The local attention consumer was still a stub. Compiling six SM90 configurations was useful, but it did not execute H200 FA3 or PDL.
 
-<figure><img src="assets/diagrams/evidence-ladder.svg" width="1000" height="390" alt="Source reasoning, exact local comparisons, changing-input graph tests and official serving evaluation provide different levels of evidence. Compilation does not equal execution, and passing does not prove a speedup."><figcaption>Each stage answers a different question. Later evidence adds coverage; it does not turn the earlier tests into universal proofs. <a href="assets/diagrams/evidence-ladder.excalidraw" download>Editable diagram</a></figcaption></figure>
+<aside class="sidenote"><strong>2,048 means cases, not a proof</strong> 512 token counts × two RoPE modes × two finite seed families. It covers every count in that interval for those inputs, not every possible tensor value.</aside>
+
+<figure><img src="assets/diagrams/evidence-ladder.svg" width="1000" height="500" alt="Local L40 tests check bytes, fixtures, replay and fallback. SM90 compilation does not execute the target. Official H200 serving evaluates integration, correctness, memory and score."><figcaption>Each stage answers a different question. Later evidence adds coverage; it does not turn the earlier tests into universal proofs. <a href="assets/diagrams/evidence-ladder.excalidraw" download>Editable diagram</a></figcaption></figure>
 
 The local preparation measurements were encouraging: **4.56–5.21 μs per layer saved** at the tested smaller sizes on the L40. These measurements included the device-side QK/RoPE preparation, casts and cache store. They excluded CPU dispatch, projections, FA3 itself, communication and the rest of serving. I could not responsibly turn that number into an H200 score forecast.
 
@@ -206,6 +234,8 @@ The official score compares throughput at stock's per-user interactivity point a
 | **Reported aggregate** | **1.0251×** | **1.0224×** |
 
 The final patch improved slightly at four users, matched at sixteen to the reported precision, and scored lower at one and thirty-two. The aggregate difference is **0.0027**, or about **0.263% relative to the earlier score**. These were separate official runs with their own stock references, not randomized repeated comparisons between the two candidates.
+
+<aside class="sidenote"><strong>Read the denominator</strong> Each ratio compares a candidate with its stock reference. Comparing the two ratios does not turn the runs into a paired, repeated candidate-versus-candidate experiment.</aside>
 
 The raw 32-user measurement reported one repetition. Its zero reported spread is not evidence of zero variability. Some latency measurements worsened as well, but neither the score difference nor those latency differences establishes a causal regression from fusion.
 
@@ -231,6 +261,8 @@ These outcomes have different meanings. A numerical failure is a blocker for tha
 
 Public reports helped frame those decisions. alygg77's negative-results document and thethings.ai's projection worklog supplied counterexamples to assuming that less traffic, extra overlap or a better local proxy must improve the measured workload. The larger attention branch examined vjeux's public implementation and its derivatives; it was left unported. Those sources deserve credit even where the result was a decision not to adopt their technique. [15](#ref-alternatives)
 
+<aside class="sidenote"><strong>Negative results are useful results</strong> “This candidate failed” and “this entire idea can never work” are very different conclusions. The table records the former without claiming the latter.</aside>
+
 ## What I would carry into the next project {#lessons}
 
 I would get target-hardware feedback earlier. The L40 was valuable for rejecting incorrect code, but I spent the last part of the project qualifying a path whose H200 integration and benefit were still unknown. Earlier paired serving measurements would have made the final choice less speculative.
@@ -248,6 +280,7 @@ For a reader following the same questions, this sequence connects GPU fundamenta
 | Question to take into the material | Resource | How it connects |
 | :--- | :--- | :--- |
 | What does a tile change besides arithmetic count? | [Si Böhm: CUDA matmul worklog](https://siboehm.com/articles/22/CUDA-MMM) | Build an intuition for reuse, thread mapping and measured iteration. |
+| How do memory movement and compute fit together? | [Aleksa Gordić: matmul](https://www.aleksagordic.com/blog/matmul) | Further reading and a visual teaching reference for this revised article; not a source of the submitted patch. |
 | Where do threads, warps and reductions fit? | [CMU 15-442/642: GPU Architecture & CUDA Programming](https://mlsyscourse.org/slides/06-CUDA-programming.pdf) | Background for the launch and reduction discussion. |
 | How do layouts map logical work onto threads? | [CMU: Data Layouts](https://mlsyscourse.org/slides/data_layout/) | A companion to reading compiler layouts, not a diagnosis of this bug. |
 | Why can fusion save traffic and launches? | [Triton: Fused Softmax](https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html) | A small runnable example before reasoning about stateful KV stores. |
@@ -283,4 +316,4 @@ The references below support the nearby claims. The [full source ledger](sources
 <li id="ref-social"><strong>X discovery, followed to primary sources.</strong> Pranjal Shankhdhar / LMSYS, <a href="https://www.lmsys.org/blog/2026-11-05-muse-spark-open-ultrafast">Muse Spark Open Ultrafast</a>; Nathen Fernandes, <a href="https://github.com/NathenFernandes/muse-bf16-proj/blob/86aff75e6aca72511bf9b41b6dc190bf1e763373/README.md">projection write-up</a>; Rohan Arun, <a href="https://x.com/RohanArun/status/2114830856393027974">X post</a> and <a href="https://github.com/rohanarun/Auto-research-agent/pull/6">linked PR</a>. The <a href="sources.html#social-trail">discovery ledger</a> records the mirror/direct-access limits and screened leads.</li>
 </ol>
 
-<p class="colophon">Written from the project record · Citations audited 22 November 2026<br>Original diagrams and prose. Visual references: <a href="https://humansand.ai/blog/gpu-accelerated-weight-teleportation">humans&amp;</a> and <a href="https://siboehm.com/articles/22/CUDA-MMM">Si Böhm</a>. Built as an independent companion to my website.</p>
+<p class="colophon">Written from the project record · Citations audited 22 November 2026<br>Original diagrams and prose. Layout and visual teaching references: <a href="https://humansand.ai/blog/gpu-accelerated-weight-teleportation">humans&amp;</a> and <a href="https://siboehm.com/articles/22/CUDA-MMM">Si Böhm</a>, plus <a href="https://www.aleksagordic.com/blog/matmul">Aleksa Gordić</a>. Figures were drawn for this project, not copied from those articles. Built as an independent companion to my website.</p>

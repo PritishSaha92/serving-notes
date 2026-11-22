@@ -21,12 +21,22 @@ const root=path.resolve(__dirname,'..');process.chdir(root);
    await page.locator('#'+id).scrollIntoViewIfNeeded();await page.screenshot({path:`.preview/article-${width}-${id}.png`});
   }
   if(width===1440||width===390){
-   for(let i=0;i<6;i++)await page.locator('article figure').nth(i).screenshot({path:`.preview/figure-${width}-${i+1}.png`});
+   for(let i=0;i<await page.locator('article figure').count();i++)await page.locator('article figure').nth(i).screenshot({path:`.preview/figure-${width}-${i+1}.png`});
    await page.locator('#tile-explorer').screenshot({path:`.preview/explorer-${width}.png`});
   }
   await page.locator('[data-token="410"]').click();assert.equal(await page.locator('#stock-tile').textContent(),'BLOCK_M = 8');assert.equal(await page.locator('#fused-tile').textContent(),'BLOCK_M = 16');
   await page.locator('[data-token="456"]').click();assert.equal(await page.locator('#stock-tile').textContent(),'BLOCK_M = 16');assert.equal(await page.locator('#fused-tile').textContent(),'BLOCK_M = 16');
-  assert.deepEqual(errors,[]);report.push({...info,errors});
+  const notes=await page.evaluate(()=>[...document.querySelectorAll('.annotation-row')].map(row=>{
+   const note=row.querySelector('.margin-note'),p=row.querySelector('.note-prose');
+   const a=note.getBoundingClientRect(),b=p.getBoundingClientRect();
+   return {id:note.id,left:a.left,right:a.right,top:a.top,bottom:a.bottom,proseRight:b.right,proseBottom:b.bottom,visible:getComputedStyle(note).display!=='none'};
+  }));
+  assert.equal(notes.length,16);assert.ok(notes.every(n=>n.visible));
+  if(width>=1101){assert.ok(notes.every(n=>n.left>n.proseRight),JSON.stringify(notes));for(let i=1;i<notes.length;i++)assert.ok(notes[i].top>=notes[i-1].bottom-1,'Overlapping margin notes')}
+  else assert.ok(notes.every(n=>n.top>=n.proseBottom-1),'Mobile notes must follow their paragraph');
+  assert.equal(await page.locator('.note-marker').count(),notes.length);
+  assert.ok(await page.locator('.highlight .mi').count()>0,'Python syntax highlighting');
+  assert.deepEqual(errors,[]);report.push({...info,marginNotes:notes.length,errors});
   if(width===1440){await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:'.preview/article-desktop-full.png',fullPage:true});await page.pdf({path:'.preview/article-print.pdf',format:'A4',printBackground:true,margin:{top:'18mm',bottom:'18mm',left:'18mm',right:'18mm'}})}
   await page.close();
  }
@@ -53,8 +63,17 @@ const root=path.resolve(__dirname,'..');process.chdir(root);
   const [file,fragment]=link.split('#');const target=path.join(root,file);assert.ok(fs.existsSync(target),link);
   if(fragment&&file.endsWith('.html'))assert.ok(fs.readFileSync(target,'utf8').includes(`id="${fragment}"`),link);
  }
- for(const name of fs.readdirSync('assets/diagrams').filter(x=>x.endsWith('.excalidraw'))){const s=JSON.parse(fs.readFileSync('assets/diagrams/'+name));assert.equal(s.type,'excalidraw');assert.ok(s.elements.length>10);assert.equal(new Set(s.elements.map(e=>e.id)).size,s.elements.length)}
+ const scenes=fs.readdirSync('assets/diagrams').filter(x=>x.endsWith('.excalidraw'));
+ for(const name of scenes){const s=JSON.parse(fs.readFileSync('assets/diagrams/'+name));assert.equal(s.type,'excalidraw');assert.ok(s.elements.length>10);assert.equal(new Set(s.elements.map(e=>e.id)).size,s.elements.length)}
+ const svgPage=await browser.newPage();
+ for(const scene of scenes){
+  await svgPage.goto(base+'/assets/diagrams/'+scene.replace('.excalidraw','.svg'));
+  await svgPage.evaluate(()=>document.fonts.ready);
+  const bounds=await svgPage.evaluate(()=>{const v=document.querySelector('svg').viewBox.baseVal;return {font:document.fonts.check('24px Kalam'),outside:[...document.querySelectorAll('svg text')].filter(t=>{const b=t.getBBox();return b.x<0||b.y<0||b.x+b.width>v.width||b.y+b.height>v.height}).map(t=>t.textContent)}});
+  assert.ok(bounds.font,'Embedded diagram font: '+scene);assert.deepEqual(bounds.outside,[],scene);
+ }
+ await svgPage.close();
  const disk=await browser.newPage({viewport:{width:1280,height:900}});await disk.goto(pathToFileURL(path.join(root,'index.html')).href);await disk.evaluate(()=>document.fonts.ready);await disk.locator('[data-token="410"]').click();assert.equal(await disk.locator('#stock-tile').textContent(),'BLOCK_M = 8');assert.equal(await disk.locator('article img').evaluateAll(images=>images.every(i=>i.complete&&i.naturalWidth>0)),true);await disk.close();
- fs.writeFileSync('.preview/qa.json',JSON.stringify({status:'passed',browser:browser.version(),viewports:report,sourceLedgerViewports:ledgerReport,numberedReferences:refs.ids.length,inlineCitations:refs.citations.length,localLinksChecked:new Set(links).size,noJavaScript:'passed',directFileOpen:'passed',excalidrawScenes:5},null,2));console.log('PASS: article and source ledger at five widths; numbered citations, cross-page anchors, images, local links, interactive boundaries, no-JS reading, direct-file opening and Excalidraw structure.');
+ fs.writeFileSync('.preview/qa.json',JSON.stringify({status:'passed',browser:browser.version(),viewports:report,sourceLedgerViewports:ledgerReport,numberedReferences:refs.ids.length,inlineCitations:refs.citations.length,localLinksChecked:new Set(links).size,noJavaScript:'passed',directFileOpen:'passed',excalidrawScenes:scenes.length},null,2));console.log('PASS: article and source ledger at five widths; numbered margin notes and citations, cross-page anchors, images, local links, interactive boundaries, no-JS reading, direct-file opening and Excalidraw structure.');
  }finally{await browser.close();await new Promise(r=>server.close(r))}
 })().catch(e=>{console.error(e);process.exitCode=1});

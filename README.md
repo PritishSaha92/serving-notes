@@ -1,6 +1,6 @@
 # Learning to optimize a serving system
 
-A standalone technical article by Pritish Saha about the Muse Spark Open Kernel Challenge serving project. The article is complete, with original editable diagrams, a tile-boundary explorer, source references and an evidence-backed results chart.
+A standalone technical article by Pritish Saha about the Muse Spark Open Kernel Challenge serving project. The article is complete, with original editable diagrams, numbered margin notes, a tile-boundary explorer, source references and an evidence-backed results chart.
 
 ## Read it
 
@@ -46,9 +46,15 @@ npm run qa
 Set `CHROME_PATH` to an existing Chrome executable to use it instead. QA runs a temporary loopback server, checks desktop/mobile, anchors, image loading, overflow, the explorer, no-JavaScript reading and browser errors, and writes screenshots under `.preview/`. No browser is published or left running.
 
 
+## Diagram and margin-note sources
+
+`tools/sketches.py` draws the original hatched SVG illustrations and matching editable Excalidraw scenes. Labels embed the local OFL Kalam font; no diagram needs a remote font request. The results chart is generated separately from `evidence/results.csv`.
+
+In `article.md`, a `sidenote` aside or `reading` block follows its associated paragraph. The build gives it a numbered anchor and aligns it in the right margin on wide screens. On smaller screens it appears directly below that paragraph, without requiring JavaScript. `data-paragraphs="2"` groups two adjacent paragraphs with a longer note; `data-follow="1"` keeps the next paragraph in the same reading block.
+
 ## Editorial decisions
 
-This is a learning worklog, not a victory announcement. It reports best recorded score **1.0251** and final repaired score **1.0224**, credits the agents and public prior art, and distinguishes local L40 evidence from integrated H200 results. Course links are study companions; the source register does not support claiming every lecture was watched. The two reference blogs influenced presentation, not copied prose or borrowed diagrams.
+This is a learning worklog, not a victory announcement. It reports best recorded score **1.0251** and final repaired score **1.0224**, credits the agents and public prior art, and distinguishes local L40 evidence from integrated H200 results. Course links are study companions; the source register does not support claiming every lecture was watched. The credited reference blogs influenced presentation, not copied prose or borrowed diagrams.
 
 ## License
 

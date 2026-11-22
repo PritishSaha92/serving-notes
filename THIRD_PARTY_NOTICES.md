@@ -8,11 +8,15 @@ material, upstream-derived code, or material merely linked from the article.
 
 ## Fonts
 
-The bundled Lora and DM Sans fonts remain under the SIL Open Font License 1.1.
+The bundled Lora, DM Sans and Kalam fonts remain under the SIL Open Font License 1.1.
 Their copyright and license notices are retained in:
 
 - `assets/fonts/lora-OFL.txt`
 - `assets/fonts/dmsans-OFL.txt`
+- `assets/fonts/kalam-OFL.txt`
+
+Kalam is embedded in the SVG teaching diagrams so their labels render offline.
+Font source: https://github.com/google/fonts/tree/main/ofl/kalam
 
 ## SGLang-derived patch
 

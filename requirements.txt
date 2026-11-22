@@ -1,2 +1,4 @@
 Markdown==3.4.1
 matplotlib==3.9.0
+beautifulsoup4==4.12.3
+Pygments==2.19.1

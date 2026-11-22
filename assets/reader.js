@@ -18,9 +18,4 @@
   let scheduled=false;
   function progress(){const max=document.documentElement.scrollHeight-innerHeight; document.querySelector('.progress').style.width=(max>0 ? 100*scrollY/max : 0)+'%';scheduled=false;}
   addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(progress)}},{passive:true});progress();
-  const headings=[...document.querySelectorAll('.article h2')], links=[...document.querySelectorAll('.toc ol a')];
-  if ('IntersectionObserver' in window) {
-    const observer=new IntersectionObserver(entries=>{for(const e of entries){if(e.isIntersecting){links.forEach(a=>{if(a.hash==='#'+e.target.id)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current')})}}},{rootMargin:'-5% 0px -65% 0px'});
-    headings.forEach(h=>observer.observe(h));
-  }
 })();
