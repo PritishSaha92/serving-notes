@@ -1,0 +1,146 @@
+{
+  "scope": "Claim-bearing reports, complete final patches, targeted implementation/probe sources. Not a line-by-line audit of all vendored code.",
+  "as_of": "2026-11-22",
+  "sources": [
+    {
+      "source": "serving/builder-artifacts/fused-results-20261118/FUSED_COMPLETED_REVIEW.md",
+      "bytes": 7234,
+      "sha256": "f2d924e2d2c1abf427b392110d742450b92ccdc410185fc1bfed4374d0d9a840"
+    },
+    {
+      "source": "serving/builder-artifacts/final-submit-20261120/REPAIRED_B_COMPLETED_REVIEW.md",
+      "bytes": 6961,
+      "sha256": "1f5d4db02183f6425acd412ee48260fde0de0aabad51947d9963aa812743a2f2"
+    },
+    {
+      "source": "serving/builder-artifacts/variant-repair/SOURCE_AND_LOCAL_REVIEW.md",
+      "bytes": 7050,
+      "sha256": "d378a3982293eb33f8297c2418feb2949e889a9e55a6d3838549445e9e58b5aa"
+    },
+    {
+      "source": "serving/builder-artifacts/variant-repair/INDEPENDENT_SWEEP_ADDENDUM.md",
+      "bytes": 5492,
+      "sha256": "99a2b3072682b8d372332a380d9c682e166952fb9da849ce0967ab57ee755a99"
+    },
+    {
+      "source": "serving/builder-artifacts/variant-repair/delta-from-blocked-B.patch",
+      "bytes": 2141,
+      "sha256": "68dcd249b9e6c4788eb708516141cfdb79e477b5355877d3fc7efb5abe6e9933"
+    },
+    {
+      "source": "serving/research/final-opportunity-audit/VARIANT_A_INDEPENDENT_REVIEW.md",
+      "bytes": 15825,
+      "sha256": "78b94eb7d474ab0f56ec9131403f0e83f04c9bff0045def5504a00eb1c43c62b"
+    },
+    {
+      "source": "serving/research/final-opportunity-audit/VARIANT_B_AND_COUNT_FEASIBILITY.md",
+      "bytes": 11382,
+      "sha256": "96d4cd2bda93e52036a4670f9eff4bccfd2be4a4c1a5e79fbf1f279513058dd0"
+    },
+    {
+      "source": "serving/CURRENT_RESUME.md",
+      "bytes": 3063,
+      "sha256": "f1c81231257419dd9c558771fc9c0afbba65f354f8d954d5e085f616735bb5a1"
+    },
+    {
+      "source": "serving/research/CONTRACT.md",
+      "bytes": 10154,
+      "sha256": "6f432e9ea1d0f43c6184bc68a9ce409b7171a7610fff8eddfea155f47c80181c"
+    },
+    {
+      "source": "serving/research/SOURCE_REGISTER.md",
+      "bytes": 19079,
+      "sha256": "60fccd51d65799a2ca4608e42621c22436d7025d3fcf4962f7246511cefdea8e"
+    },
+    {
+      "source": "serving/research/NICE_SOLUTIONS_AUDIT.md",
+      "bytes": 12868,
+      "sha256": "76ef7b4c12596a05730185d2ce2628a99e870913cb43d5993fe6135e86e022be"
+    },
+    {
+      "source": "serving/X_RESEARCH_ADDENDUM.md",
+      "bytes": 20539,
+      "sha256": "a501309ae007dfec911db1d19cdeed04d420db3d1978fb9000399ac0451ef1d6"
+    },
+    {
+      "source": "serving/research/REPOSITORIES.json",
+      "bytes": 17473,
+      "sha256": "384bc9a9ce6cbf8b9bc765cbc2a7b658a41be62ca423a42b2fb2573dbb3220f5"
+    },
+    {
+      "source": "serving/research/final-opportunity-audit/ATTENTION_PORTABILITY_REVIEW.md",
+      "bytes": 16638,
+      "sha256": "79e64ab8817a984af32b3d2b7e7eccc62529c88f8c31809881c6aa4fae65ca90"
+    },
+    {
+      "source": "serving/research/references/sgl-attn/f89bc2306632d1ec5f97b014dded4254f5b4a907/PROVENANCE.json",
+      "bytes": 3057,
+      "sha256": "dac5c667dbc8f3412b58f3e5e44713123189cc658d3f25d094f8a8ab67b6c8fa"
+    },
+    {
+      "source": "serving/research/R1_LIFECYCLE_REVIEW.md",
+      "bytes": 12441,
+      "sha256": "0903aacb95c9cf73efee3edf483cd5db18ebf7089a613ecac4bbd6223696b0f3"
+    },
+    {
+      "source": "serving/research/ROUND2_C1_DIAGNOSIS.md",
+      "bytes": 6623,
+      "sha256": "6c21306ee23b1ac9587eb8e45eddc2ce349601408c517575252f86c7ab692ca4"
+    },
+    {
+      "source": "serving/research/C3E_REVIEW.md",
+      "bytes": 17168,
+      "sha256": "38c4134030c7c0941454738788d5e3ca808c0a17e9d4448d0de51f1b90e0c499"
+    },
+    {
+      "source": "serving/research/parallel-round3/R1_INDEPENDENT_REVIEW.md",
+      "bytes": 27700,
+      "sha256": "24a2387063667240364ec24c2a462c385f51dad2181d000e592c67d22ad468cb"
+    },
+    {
+      "source": "serving/research/prefix-liveness/PASS_RESULT_REVIEW.md",
+      "bytes": 13994,
+      "sha256": "17fe9fe883c617196de730c44973bd402e75c86207d0d8b7b4f408ac94203583"
+    },
+    {
+      "source": "serving/research/final-opportunity-audit/VARIANT_B_IMPLEMENTATION_REVIEW.md",
+      "bytes": 8276,
+      "sha256": "2bfa67196082befd72aa29a8fd16a77e9850e545b9cc0233a1127f99dd773718"
+    },
+    {
+      "source": "serving/builder-artifacts/variant-repair/INDEPENDENT_REVIEW.md",
+      "bytes": 16997,
+      "sha256": "eae1edd79a3dcbe6a98c57ae17c72bb9a58d05f9889a380bac93ecdb3989d7fe"
+    },
+    {
+      "source": "serving/builder-artifacts/variant-repair/probe_dense_sweep.py",
+      "bytes": 2495,
+      "sha256": "5404326cb5ac8502202654dec5c3edb4b55c691f7fc87f1a0f1d33bee6dbee0e"
+    },
+    {
+      "source": "serving/builder-artifacts/variant-repair/qk-tiling-only-blocked.py",
+      "bytes": 18758,
+      "sha256": "a8ac559281cb7dc34a49d4c8c3f7a6189ed18068e61769e3c3ebc19142a3dba3"
+    },
+    {
+      "source": "serving/builder-artifacts/fused-mixed-final/FINAL_COMPARISON_AFTER_PARENT_SCORE.md",
+      "bytes": 12790,
+      "sha256": "836987cf86eb3bcbf6ab06bb5ec7b4c37fa4c6a359a1933058fa5dd6d72f6116"
+    },
+    {
+      "source": "serving/builder-artifacts/candidates/adaptive32fused-a2d84a8290b0/patch.diff",
+      "bytes": 10657,
+      "sha256": "a2d84a8290b0c7d3a56c554bafb08643a8671a3486b1f2e287ed49db23677f6c"
+    },
+    {
+      "source": "serving/builder-artifacts/candidates/adaptive32fused-qkvstore-repair-04ec69722720/patch.diff",
+      "bytes": 21493,
+      "sha256": "04ec6972272094554f554bc864d08a872588e5e982acc8b1cbb87f447bef5fe2"
+    },
+    {
+      "source": "serving/builder-artifacts/final-submit-20261120/TECHNICAL_NOTE_REPAIR.md",
+      "bytes": 4118,
+      "sha256": "6a8e85b141a712565f26ef6fff34280f03d790cf7c50d5a22f5497e4249f511f"
+    }
+  ]
+}

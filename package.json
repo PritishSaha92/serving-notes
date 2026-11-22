@@ -1,0 +1,17 @@
+{
+  "name": "muse-serving-notebook",
+  "version": "1.0.0",
+  "description": "An evidence-backed Muse serving optimization worklog",
+  "scripts": {
+    "preview": "node tools/server.cjs",
+    "build": "python tools/figures.py && python tools/build.py",
+    "qa": "node tools/qa.cjs"
+  },
+  "keywords": [],
+  "author": "Pritish Saha",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "1.56.1"
+  },
+  "private": true
+}

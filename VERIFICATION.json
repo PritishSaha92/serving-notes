@@ -1,0 +1,94 @@
+{
+  "status": "passed",
+  "browser": "139.0.7258.155",
+  "viewports": [
+    {
+      "width": 320,
+      "scroll": 320,
+      "broken": [],
+      "missing": [],
+      "h1": 1,
+      "words": 4940,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "scroll": 390,
+      "broken": [],
+      "missing": [],
+      "h1": 1,
+      "words": 4940,
+      "errors": []
+    },
+    {
+      "width": 768,
+      "scroll": 768,
+      "broken": [],
+      "missing": [],
+      "h1": 1,
+      "words": 4940,
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "scroll": 1440,
+      "broken": [],
+      "missing": [],
+      "h1": 1,
+      "words": 4940,
+      "errors": []
+    },
+    {
+      "width": 1720,
+      "scroll": 1720,
+      "broken": [],
+      "missing": [],
+      "h1": 1,
+      "words": 4940,
+      "errors": []
+    }
+  ],
+  "sourceLedgerViewports": [
+    {
+      "width": 320,
+      "scroll": 320,
+      "h1": 1,
+      "sections": 7,
+      "missing": []
+    },
+    {
+      "width": 390,
+      "scroll": 390,
+      "h1": 1,
+      "sections": 7,
+      "missing": []
+    },
+    {
+      "width": 768,
+      "scroll": 768,
+      "h1": 1,
+      "sections": 7,
+      "missing": []
+    },
+    {
+      "width": 1440,
+      "scroll": 1440,
+      "h1": 1,
+      "sections": 7,
+      "missing": []
+    },
+    {
+      "width": 1720,
+      "scroll": 1720,
+      "h1": 1,
+      "sections": 7,
+      "missing": []
+    }
+  ],
+  "numberedReferences": 16,
+  "inlineCitations": 19,
+  "localLinksChecked": 30,
+  "noJavaScript": "passed",
+  "directFileOpen": "passed",
+  "excalidrawScenes": 5
+}

@@ -1,0 +1,93 @@
+{
+  "audited_on": "2026-11-22",
+  "scope": "Article citations and annotated source ledger. Not a claim of complete historical reading or reproduction of third-party benchmarks.",
+  "article_references": 16,
+  "paper_metadata_checked": [
+    {
+      "title": "SGLang: Efficient Execution of Structured Language Model Programs",
+      "url": "https://arxiv.org/abs/2312.07104v2"
+    },
+    {
+      "title": "MARLIN: Mixed-Precision Auto-Regressive Parallel Inference on Large Language Models",
+      "url": "https://arxiv.org/abs/2408.11743v1"
+    },
+    {
+      "title": "FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision",
+      "url": "https://arxiv.org/abs/2407.08608v2"
+    },
+    {
+      "title": "DFlash: Block Diffusion for Flash Speculative Decoding",
+      "url": "https://arxiv.org/abs/2602.06036v2"
+    },
+    {
+      "title": "Root Mean Square Layer Normalization",
+      "url": "https://arxiv.org/abs/1910.07467v1"
+    },
+    {
+      "title": "RoFormer: Enhanced Transformer with Rotary Position Embedding",
+      "url": "https://arxiv.org/abs/2104.09864v5"
+    },
+    {
+      "title": "Validity of the single processor approach to achieving large scale computing capabilities",
+      "url": "https://doi.org/10.1145/1465482.1465560"
+    }
+  ],
+  "upstream_file_checks": [
+    {
+      "path": "python/sglang/kernels/ops/moe/moe_wna16_marlin.py",
+      "ok": true,
+      "sha": "f5d7d2ce34f9f2e2bbe72177a237cee195556256",
+      "url": "https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/kernels/ops/moe/moe_wna16_marlin.py",
+      "bytes": 6322
+    },
+    {
+      "path": "python/sglang/kernels/aot/CMakeLists.txt",
+      "ok": true,
+      "sha": "2908aae1bca1ccc2db6f696de0cb30beb24fd8ef",
+      "url": "https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/kernels/aot/CMakeLists.txt",
+      "bytes": 21599
+    },
+    {
+      "path": "python/sglang/srt/layers/muse_spark/muse_spark_fp4_moe.py",
+      "ok": true,
+      "sha": "41c463dcfabe782eb681e9b2ab7b5c37c81d0df2",
+      "url": "https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/srt/layers/muse_spark/muse_spark_fp4_moe.py",
+      "bytes": 32829
+    },
+    {
+      "path": "python/sglang/srt/models/muse_spark.py",
+      "ok": true,
+      "sha": "6b638e9f5ebd3b74271fe4c5eb7fa81c13bdcba1",
+      "url": "https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/srt/models/muse_spark.py",
+      "bytes": 66915
+    },
+    {
+      "path": "python/sglang/kernels/jit/csrc/gemm/marlin_moe/marlin_template.h",
+      "ok": true,
+      "sha": "720d28e63e0430cf89eb46d023fdaba6e4d661d7",
+      "url": "https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/kernels/jit/csrc/gemm/marlin_moe/marlin_template.h",
+      "bytes": 81583
+    },
+    {
+      "path": "python/sglang/kernels/ops/attention/muse_spark_qk_norm_rope_store.py",
+      "ok": true,
+      "sha": "235eecae1b9c8efffd8b3bc180b6756ba3b4ea78",
+      "url": "https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/kernels/ops/attention/muse_spark_qk_norm_rope_store.py",
+      "bytes": 16427
+    },
+    {
+      "path": "python/sglang/srt/layers/attention/flashattention_backend.py",
+      "ok": true,
+      "sha": "0b4ecf1884edfbcaffe9d95d7a0ae89d7ee95ccf",
+      "url": "https://github.com/sgl-project/sglang/blob/297e54fd105e974cdf401e5b4d20253a22c16f90/python/sglang/srt/layers/attention/flashattention_backend.py",
+      "bytes": 167792
+    }
+  ],
+  "access_limits": [
+    "Direct access to the Rohan Arun X post returned HTTP 403. Other social-profile references reproduce the historical discovery trail, not newly authenticated posts.",
+    "Some GitHub HTML fetches returned cache misses; georgxzh and hariappi pinned READMEs and all seven cited SGLang files were retrieved with the GitHub connector.",
+    "The pinned sgl-attn scheduler source was accessible through its raw URL; the project provenance records all five source files and hashes.",
+    "Not every screened repository, mirror or optional reading link was freshly fetched in this citation pass."
+  ],
+  "provenance": "Historical scopes reconciled from SOURCE_REGISTER.md, NICE_SOLUTIONS_AUDIT.md, REPOSITORIES.json, X_RESEARCH_ADDENDUM.md and later attention reviews. Article-specific results come from the included saved reviews."
+}
