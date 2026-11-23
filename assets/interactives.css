@@ -1,6 +1,6 @@
-/* Progressive, reader-controlled illustrations. Original figures remain for print/no JS. */
+/* Progressive, reader-controlled illustrations. Original figures stay visible alongside interactive versions. */
 @font-face{font-family:Kalam;src:url('fonts/kalam-regular.woff2') format('woff2');font-display:swap}
-.is-enhanced>.static-figure{display:none}
+.is-enhanced>.static-figure{display:block}
 .live-figure{margin:38px 0 42px;padding:27px 24px 20px;border-block:1px solid #b8c6b4;background:#fafbf4;font:15px/1.65 var(--sans);color:var(--ink)}
 .live-eyebrow{font:11px/1.5 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--green)}
 .article .live-figure h3{font:27px/1.35 var(--serif);margin:9px 0 14px;letter-spacing:-.02em}
@@ -128,7 +128,7 @@
 .cache-slot small,.cache-slot strong,.cache-slot span{display:block}.cache-slot small{font-size:12px}.cache-slot strong{font:23px/1.8 Kalam,var(--serif)}.cache-slot span{font-size:10px;color:var(--muted)}
 .cache-slot.just-written{border:2px solid #397659;padding:9px 3px;background:repeating-linear-gradient(130deg,#edf3e7 0px,#edf3e7 5px,#dce8d6 5px,#dce8d6 6px)}
 .cache-slot.reserved-slot{border-style:dashed}.cache-slot.reserved-slot strong{font-size:15px;line-height:2.76}
-.rounding-static{display:none}
+.rounding-static{display:block}
 .rounding-walkthrough{border-top:1px solid #b8c6b4;margin-top:24px;padding-top:3px}
 .article .rounding-walkthrough h3{font:23px/1.4 var(--serif);margin:20px 0 13px}
 .article .rounding-intro{font:15px/1.7 var(--serif);margin-bottom:19px}

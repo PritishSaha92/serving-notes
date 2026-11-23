@@ -31,13 +31,44 @@
     panel.querySelector('#rounding-prev').addEventListener('click', () => { step = Math.max(0, step - 1); render(); });
     panel.querySelector('#rounding-next').addEventListener('click', () => { step = Math.min(2, step + 1); render(); });
     panel.querySelector('#rounding-reset').addEventListener('click', () => { step = 0; slider.value = 56; update(); render(); });
-    // Replace redundant static sketches on screen only; keep both for print/no JS.
+    // Retain the authored overview sketches alongside the interactive explanation.
     ['rounding-boundary', 'rounding-midpoint'].forEach(name => document.querySelector(`img[src="assets/diagrams/${name}.svg"]`)?.closest('figure').classList.add('rounding-static'));
     render();
     window.NotebookPlayback({root: document.querySelector('#tile-explorer'), controls: panel,
       watch: document.querySelector('.rounding-stages'), getIndex: () => step, count: () => 3,
       setIndex: value => { step = value; render(); }, interval: 5000});
   }
+  // Desktop margin notes occupy their own column rather than stretching the
+  // prose row to the height of a tall note. Stack only notes that would collide.
+  const article = document.querySelector('#article');
+  const noteRows = [...document.querySelectorAll('.annotation-row')];
+  let notesScheduled = false;
+  function layoutNotes() {
+    notesScheduled = false;
+    if (!article) return;
+    article.classList.add('sidenotes-flow');
+    if (!matchMedia('(min-width:1101px)').matches) return;
+    let previousBottom = -Infinity;
+    for (const row of noteRows) {
+      const note = row.querySelector('.margin-note');
+      const anchor = row.getBoundingClientRect().top + scrollY;
+      const top = Math.max(anchor, previousBottom + 18);
+      note.style.top = `${top - anchor}px`;
+      previousBottom = top + note.getBoundingClientRect().height;
+    }
+  }
+  function scheduleNotes() {
+    if (!notesScheduled) { notesScheduled = true; requestAnimationFrame(layoutNotes); }
+  }
+  addEventListener('resize', scheduleNotes);
+  document.addEventListener('toggle', scheduleNotes, true);
+  document.querySelectorAll('article img').forEach(img => img.addEventListener('load', scheduleNotes));
+  if (window.ResizeObserver) {
+    const observer = new ResizeObserver(scheduleNotes);
+    document.querySelectorAll('.note-prose, .margin-note').forEach(el => observer.observe(el));
+  }
+  document.fonts.ready.then(scheduleNotes);
+  scheduleNotes();
   let scheduled=false;
   function progress(){const max=document.documentElement.scrollHeight-innerHeight; document.querySelector('.progress').style.width=(max>0 ? 100*scrollY/max : 0)+'%';scheduled=false;}
   addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(progress)}},{passive:true});progress();

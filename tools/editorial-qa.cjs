@@ -14,6 +14,16 @@ process.chdir(path.resolve(__dirname,'..'));
    assert.match(await page.locator('h1').innerText(),/tile\s+changes/);
    assert.equal(await page.locator('a[href$=".excalidraw"]').count(),0);
    assert.doesNotMatch(await page.locator('body').innerText(),/Editable diagram|page design were inspired/);
+   for(const name of ['expert-routing','attention-fusion','cache-writes','rounding-boundary','rounding-midpoint']){
+    assert.equal(await page.locator(`img[src="assets/diagrams/${name}.svg"]`).isVisible(),true);
+   }
+   if(width>1100){
+    const spacing=await page.evaluate(()=>[...document.querySelectorAll('.annotation-row')].map(row=>({
+     row:row.getBoundingClientRect().height,
+     prose:row.querySelector('.note-prose').getBoundingClientRect().height
+    })));
+    assert.ok(spacing.every(x=>Math.abs(x.row-x.prose)<2),'Tall notes must not reserve extra main-column height');
+   }
    const details=page.locator('details.technical-note');assert.equal(await details.count(),3);
    for(let i=0;i<3;i++){
     const item=details.nth(i);assert.equal(await item.getAttribute('open'),null);
@@ -26,6 +36,12 @@ process.chdir(path.resolve(__dirname,'..'));
    await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:`.preview/editorial-top-${width}.png`});
    await page.locator('#performance-budget').scrollIntoViewIfNeeded();
    await page.screenshot({path:`.preview/editorial-budget-${width}.png`});
+   if(width===1440||width===390){
+    for(const [name,selector] of [['occupancy','img[src$="tile-note.svg"]'],['conversion','img[src$="rounding-note.svg"]'],['boundary','#rounding']]){
+     await page.locator(selector).scrollIntoViewIfNeeded();
+     await page.screenshot({path:`.preview/spacing-${name}-${width}.png`});
+    }
+   }
    await page.close();
   }
   fs.writeFileSync('.preview/editorial-qa.json',JSON.stringify({status:'passed',widths:[320,390,768,1440,1720],checks:['three disclosure notes open and close','no document overflow','no editable diagram links or design-credit sentence','budget and header screenshots']},null,2));

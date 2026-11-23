@@ -20,3 +20,9 @@
 
 .technical-note{border-block:1px solid var(--line);margin:28px 0;padding:16px 0;font-size:.92em}.technical-note>summary{font:600 15px/1.7 var(--sans);color:var(--green)}.technical-note[open]>summary{margin-bottom:22px}.technical-note>p:last-child{margin-bottom:0}.technical-note .table-wrap{margin-bottom:0}
 .hero h1{text-wrap:balance}
+/* Enhanced desktop notes flow independently; small screens retain inline notes. */
+@media screen and (min-width:1101px){
+ .article.sidenotes-flow>.annotation-row{display:block;position:relative}
+ .sidenotes-flow .note-prose{max-width:var(--main)}
+ .sidenotes-flow .margin-note{position:absolute;top:0;left:calc(var(--main) + var(--gap));width:var(--margin)}
+}

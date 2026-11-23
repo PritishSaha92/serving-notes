@@ -21,7 +21,7 @@ Then open `http://127.0.0.1:8080`. Keep this directory separate from `PritishSah
 - `sources.md`, `sources.html`: annotated bibliography and research trail, including primary papers, pinned source, relevant public reports, X discovery limits and the recorded reading scopes.
 - `assets/style.css`, `assets/reader.js`: responsive design and optional enhancements.
 - `assets/playback.js`: shared viewport-aware playback, pausing, replay and reduced-motion behavior. Step durations are teaching pacing, not GPU timings.
-- `assets/interactives.css`, `assets/interactives.js`: expert row packing and route partitioning, the stock/A/repaired-B tensor walkthrough, and changing-input cache replay. `reader.js` extends the dispatch explorer with a recorded rounding example. Diagrams play once when their visual area comes into view, with Play/Pause, Previous, Next and Reset controls. Playback pauses off-screen or in a hidden tab; manual interaction pauses it too. Reduced-motion preferences disable automatic playback. There are no network dependencies. Static figures remain available without JavaScript and in print.
+- `assets/interactives.css`, `assets/interactives.js`: expert row packing and route partitioning, the stock/A/repaired-B tensor walkthrough, and changing-input cache replay. `reader.js` extends the dispatch explorer with a recorded rounding example. Diagrams play once when their visual area comes into view, with Play/Pause, Previous, Next and Reset controls. Playback pauses off-screen or in a hidden tab; manual interaction pauses it too. Reduced-motion preferences disable automatic playback. There are no network dependencies. The hand-drawn overview figures remain visible above their interactive counterparts, as well as without JavaScript and in print.
 - `assets/diagrams/`: eleven original SVG diagrams and matching **Excalidraw scenes**, plus a data-driven result chart. Open any `.excalidraw` file in Excalidraw to edit it. SVG exports are generated from the same source scene primitives; they are not screenshots from the reference blogs.
 - `evidence/`: a small allowlist of project reports, chart data, an artifact hash inventory and claim map. Historical reports retain their original wording and dates.
 - `tools/`: deterministic article/diagram builders, local development server and visual QA scripts.
@@ -52,6 +52,8 @@ Set `CHROME_PATH` to an existing Chrome executable to use it instead. QA runs a 
 
 
 ## Diagram and margin-note sources
+
+Desktop margin notes flow independently of paragraph height and stack to avoid collisions; mobile notes remain in reading order below their passages.
 
 `tools/sketches.py` draws the original hatched SVG illustrations and matching editable Excalidraw scenes. Labels embed the local OFL Kalam font; no diagram needs a remote font request. The results chart is generated separately from `evidence/results.csv`.
 

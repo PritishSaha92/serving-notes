@@ -181,13 +181,13 @@
   },
   {
     "path": "assets/interactives.css",
-    "bytes": 16152,
-    "sha256": "66630f5073fa2390c4e8480ef7cdc80b4ce220b8d6df292be43673e32480fadc"
+    "bytes": 16362,
+    "sha256": "c7f9786e09ead9aa0245465ff512fd4085b5084211ed7c56480929dcbf4fc5b3"
   },
   {
     "path": "assets/interactives.js",
-    "bytes": 30991,
-    "sha256": "fb7f0b54899fac908d9fc00a83725e36e9aa2017f93e3ba7062e6e63e56eb5f4"
+    "bytes": 31073,
+    "sha256": "c40c29e92216edb5f82f6a4ae32fc80a4452755642535b619daa7d57954392cd"
   },
   {
     "path": "assets/playback.js",
@@ -196,13 +196,13 @@
   },
   {
     "path": "assets/reader.js",
-    "bytes": 3292,
-    "sha256": "9ed6a072156f00633e4e39493ff6bd9422ab236790ef9ed827eadb3724cc8b18"
+    "bytes": 4735,
+    "sha256": "c78a63e9390c3b13211c57a6664770f520fe75d98ed88f5bd24177cc4b65ea07"
   },
   {
     "path": "assets/style.css",
-    "bytes": 12080,
-    "sha256": "e91312b6502146cedc42d6c60cb84905533b474a084f6927db4decba9b63482f"
+    "bytes": 12447,
+    "sha256": "bfef1b63f91a53ec57c2aeaeab36febfb16a3e7122a919ce4a806c538e66aa52"
   },
   {
     "path": "assets/syntax.css",
@@ -326,8 +326,8 @@
   },
   {
     "path": "README.md",
-    "bytes": 6412,
-    "sha256": "c0fc0c8ab3a17ad06d980e18563e947f4d471bb38e10e0c25862ce36c90309ae"
+    "bytes": 6629,
+    "sha256": "4a96bc721bb10835baa6fb1ee54f172392ba8c3076aa4ec5713946a43bf05165"
   },
   {
     "path": "requirements.txt",
@@ -376,8 +376,8 @@
   },
   {
     "path": "tools/editorial-qa.cjs",
-    "bytes": 2478,
-    "sha256": "61086eb937f604bac818c79eb7d5d2a3590d0535d85284efbc7040f9b9341fb7"
+    "bytes": 3401,
+    "sha256": "2070f75342d225af71cb85512828d68f95bdffff140c33ca9c537043181085a6"
   },
   {
     "path": "tools/figures.py",
@@ -422,6 +422,6 @@
   {
     "path": "VERIFICATION.json",
     "bytes": 2816,
-    "sha256": "7e93a745843fe505abe38918859f487fd40061d141a7c86f58be785740847e3e"
+    "sha256": "05dc50ea9d9fd1040eae6ca8920b3f66dcc9668902edb0b41709a673ca45b077"
   }
 ]

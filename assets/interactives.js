@@ -16,7 +16,8 @@
     // Enhance only after initialization succeeds; the authored figure is the fallback.
     initialize(panel);
     figure.before(wrapper);
-    wrapper.append(panel, figure);
+    // Keep the overview sketch in the reading flow; the interactive follows it.
+    wrapper.append(figure, panel);
     figure.classList.add('static-figure');
     wrapper.classList.add('is-enhanced');
   }
