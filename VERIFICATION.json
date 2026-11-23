@@ -9,8 +9,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6312,
-      "marginNotes": 16,
+      "words": 5031,
+      "marginNotes": 13,
       "errors": []
     },
     {
@@ -19,8 +19,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6312,
-      "marginNotes": 16,
+      "words": 5031,
+      "marginNotes": 13,
       "errors": []
     },
     {
@@ -29,8 +29,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6338,
-      "marginNotes": 16,
+      "words": 5057,
+      "marginNotes": 13,
       "errors": []
     },
     {
@@ -39,8 +39,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6338,
-      "marginNotes": 16,
+      "words": 5057,
+      "marginNotes": 13,
       "errors": []
     },
     {
@@ -49,8 +49,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6338,
-      "marginNotes": 16,
+      "words": 5064,
+      "marginNotes": 13,
       "errors": []
     }
   ],
@@ -91,12 +91,29 @@
       "missing": []
     }
   ],
-  "numberedReferences": 15,
-  "inlineCitations": 19,
-  "localLinksChecked": 41,
+  "numberedReferences": 14,
+  "inlineCitations": 18,
+  "localLinksChecked": 34,
   "noJavaScript": "passed",
   "directFileOpen": "passed",
   "excalidrawScenes": 11,
   "interactiveIllustrations": "Four explanations: row packing and exact route partition with weights; stock/A/repaired-B tensor copies and fallback; two-call cache ownership; dispatch and recorded rounding example. Keyboard, reset, print and no-JS fallbacks passed at five widths.",
-  "roundingExampleArithmetic": "passed; recorded samples, BF16 adjacency, E4M3 ties-to-even and plotted position"
+  "editorialReview": {
+    "status": "passed",
+    "widths": [
+      320,
+      390,
+      768,
+      1440,
+      1720
+    ],
+    "checks": [
+      "three disclosure notes open and close",
+      "no document overflow",
+      "no editable diagram links or design-credit sentence",
+      "budget and header screenshots"
+    ]
+  },
+  "roundingExampleArithmetic": "passed; recorded samples, BF16 adjacency, E4M3 ties-to-even and plotted position",
+  "performanceBudgetArithmetic": "passed; 14 L40 timing cases and explicitly conditional 62-layer / 20-ms calculation"
 }

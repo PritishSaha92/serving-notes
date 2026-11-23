@@ -12,7 +12,7 @@
     panel.className = 'live-figure';
     panel.id = id;
     panel.setAttribute('aria-labelledby', `${id}-title`);
-    panel.innerHTML = markup + `<div class="figure-downloads"><a href="assets/diagrams/${imageName}.svg">Open static diagram</a><a href="assets/diagrams/${imageName}.excalidraw" download>Editable diagram</a></div>`;
+    panel.innerHTML = markup + `<div class="figure-downloads"><a href="assets/diagrams/${imageName}.svg">Open static diagram</a></div>`;
     // Enhance only after initialization succeeds; the authored figure is the fallback.
     initialize(panel);
     figure.before(wrapper);

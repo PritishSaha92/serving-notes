@@ -94,7 +94,7 @@ const root=path.resolve(__dirname,'..');process.chdir(root);
    const a=note.getBoundingClientRect(),b=p.getBoundingClientRect();
    return {id:note.id,left:a.left,right:a.right,top:a.top,bottom:a.bottom,proseRight:b.right,proseBottom:b.bottom,visible:getComputedStyle(note).display!=='none'};
   }));
-  assert.equal(notes.length,16);assert.ok(notes.every(n=>n.visible));
+  assert.equal(notes.length,13);assert.ok(notes.every(n=>n.visible));
   if(width>=1101){assert.ok(notes.every(n=>n.left>n.proseRight),JSON.stringify(notes));for(let i=1;i<notes.length;i++)assert.ok(notes[i].top>=notes[i-1].bottom-1,'Overlapping margin notes')}
   else assert.ok(notes.every(n=>n.top>=n.proseBottom-1),'Mobile notes must follow their paragraph');
   assert.equal(await page.locator('.note-marker').count(),notes.length);
@@ -111,7 +111,7 @@ const root=path.resolve(__dirname,'..');process.chdir(root);
   const ids=[...document.querySelectorAll('ol.references>li')].map(e=>e.id);
   return {ids,citations:[...document.querySelectorAll('a[href^="#ref-"]')].map(a=>({id:a.hash.slice(1),number:Number(a.textContent)}))};
  });
- assert.equal(refs.ids.length,15);assert.equal(new Set(refs.ids).size,refs.ids.length);
+ assert.equal(refs.ids.length,14);assert.equal(new Set(refs.ids).size,refs.ids.length);
  for(const cite of refs.citations)assert.equal(cite.number,refs.ids.indexOf(cite.id)+1,JSON.stringify(cite));
  const ledgerReport=[];
  for(const width of [320,390,768,1440,1720]){

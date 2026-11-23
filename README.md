@@ -1,4 +1,4 @@
-# Learning to optimize a serving system
+# When a GPU launch tile changes an FP8 byte
 
 A standalone technical article by Pritish Saha about the Muse Spark Open Kernel Challenge serving project. The article includes original editable diagrams, numbered margin notes, four interactive explanations, source references and an evidence-backed results chart.
 
@@ -43,6 +43,9 @@ To run browser QA:
 npm ci
 npx playwright install chromium
 npm run qa
+node tools/editorial-qa.cjs
+python tools/check_rounding_example.py
+python tools/check_performance_budget.py
 ```
 
 Set `CHROME_PATH` to an existing Chrome executable to use it instead. QA runs a temporary loopback server, checks desktop/mobile, anchors, image loading, overflow, the explorer, no-JavaScript reading and browser errors, and writes screenshots under `.preview/`. No browser is published or left running.

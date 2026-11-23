@@ -100,13 +100,12 @@ GEMM People and NKI 7013 are credited separately under direct prior art because 
 | NVIDIA, [Floating Point and IEEE 754 Compliance](https://docs.nvidia.com/cuda/floating-point/index.html), especially “Operations and Accuracy” and “Example: Dot Product” | Background for non-associativity and reduction order. The actual bug evidence is the preserved project probe, not this general white paper. |
 | NVIDIA, [Programmatic Dependent Launch](https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/programmatic-dependent-launch.html) | Producer/consumer ordering concepts; paired with the pinned FA3 launchers rather than treated as proof of a particular call path. |
 | [Triton fused-softmax tutorial](https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html) | Teaching example for avoiding intermediate traffic and launches. No softmax kernel was copied into the patch. |
-| Si Böhm, [How to Optimize a CUDA Matmul Kernel for cuBLAS-like Performance: a Worklog](https://siboehm.com/articles/22/CUDA-MMM) (2022) | Tiling/performance intuition and a presentation reference. The prose and diagrams here are original. |
-| Aleksa Gordić, [matmul article](https://www.aleksagordic.com/blog/matmul) | Visual teaching and structure reference for the November 22 article redesign. Not presented as a source consulted during the submitted implementation. No diagram or prose copied. |
+| Si Böhm, [How to Optimize a CUDA Matmul Kernel for cuBLAS-like Performance: a Worklog](https://siboehm.com/articles/22/CUDA-MMM) (2022) | Background for tiling, data reuse and measured iteration. |
 | CMU 15-442/642, [GPU Architecture & CUDA Programming slides](https://mlsyscourse.org/slides/06-CUDA-programming.pdf) | Suggested thread/warp/reduction background. Not a claim that the complete course or lecture recording was consumed. |
 | CMU 15-442/642, [Data Layouts](https://mlsyscourse.org/slides/data_layout/) | Suggested follow-up for logical-to-thread mappings. |
 | CMU 15-442/642, [LLM Serving, Part 1](https://mlsyscourse.org/slides/14-LLM-serving-part1.pdf) | Suggested batching/cache background. |
 | CMU 15-779, [Warp Specialization slides](https://www.cs.cmu.edu/~zhihaoj2/15-779/slides/06-warp-specialization.pdf) | Further study; this patch did not implement warp specialization. |
-| humans&, [GPU-accelerated Weight Teleportation](https://humansand.ai/blog/gpu-accelerated-weight-teleportation) | Separate RL systems example and presentation reference. No compression or training-to-rollout weight-sync system was implemented here. |
+| humans&, [GPU-accelerated Weight Teleportation](https://humansand.ai/blog/gpu-accelerated-weight-teleportation) | Related systems work on intermediate handoffs. No compression or training-to-rollout weight-sync system was implemented here. |
 
 The PyTorch FP8 conversion claim is version-specific: the independent A review inspected installed **PyTorch 2.14.1**, `torch/headeronly/util/Float8_e4m3fn.h`, `fp8e4m3fn_from_fp32_value`, and the project tested actual conversions. Its header hash and correction are preserved in the [archived A review](evidence/variant-a-review.md). A generic current PyTorch documentation page would not establish those exact bytes. That historical review's “no blocker” conclusion was subsequently superseded by the boundary failures and repair; only its conversion-source evidence is cited here.
 
@@ -121,5 +120,6 @@ The longer preparation catalog also listed vLLM, Orca, Sarathi-Serve, NanoFlow, 
 - [Initial mapping patch](evidence/mapping.patch): the first global-to-local GPU route lookup.
 - [Final-selection extract](evidence/submission-decision.json) and [submission technical note](evidence/submission-method.md): what was frozen, what remained queued and which risks were recorded before the scored run. These are historical decision records, not current status.
 - [Chart data](evidence/results.csv): the plotted values, with no invented uncertainty estimates.
+- [Conditional performance budget](evidence/performance-budget.md) and [14 local timing cases](evidence/preparation-timings.json): a retrospective arithmetic check, with source hashes and an illustrative cycle time; not an H200 speedup prediction.
 
 All conceptual diagrams are original; editable Excalidraw scenes accompany them. No public benchmark table is relabeled as this project's result. Public reports are credited for the ideas they supplied, while unsuccessful, unimplemented and unread branches remain identified as such.

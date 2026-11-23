@@ -1,0 +1,119 @@
+{
+  "scope": "QK/RoPE + BF16->FP8 KV casts + cache store + query cast; hot same buffers; excludes QKV GEMM, FA3, projections, whole server and H200 PDL. 100 calls/graph,20 replays/sample,7 alternating pairs.",
+  "gpu": "NVIDIA L40",
+  "torch": "2.14.1+cu130",
+  "sources": [
+    {
+      "path": "serving/builder-artifacts/variant-repair/timing-v3.json",
+      "sha256": "e03c37e172b0406f1b71b70447ea73477e70a3d425acb6436c39219997e8e580"
+    },
+    {
+      "path": "serving/research/final-window/RECOMMENDATION.md",
+      "sha256": "f3d1bfcfd66e18e8b2cebe856cbf39caa1335e0c4238eddabe8754696887d57a"
+    },
+    {
+      "path": "serving/builder-artifacts/variant-repair/probe_layers.py",
+      "sha256": "3c1d73d9061409ed9be0582d3d98504e80027724bbf9cf741d8c5e75bcbb5006"
+    }
+  ],
+  "cases": [
+    {
+      "T": 8,
+      "rope": false,
+      "median_stock_us": 5.981184005737305,
+      "median_repair_us": 1.4114240407943726,
+      "saving_us": 4.569759964942932
+    },
+    {
+      "T": 8,
+      "rope": true,
+      "median_stock_us": 6.015488147735596,
+      "median_repair_us": 1.4555679559707642,
+      "saving_us": 4.5599201917648315
+    },
+    {
+      "T": 52,
+      "rope": false,
+      "median_stock_us": 6.570831775665283,
+      "median_repair_us": 1.6430079936981201,
+      "saving_us": 4.927823781967163
+    },
+    {
+      "T": 52,
+      "rope": true,
+      "median_stock_us": 6.648784160614014,
+      "median_repair_us": 1.7003040313720703,
+      "saving_us": 4.948480129241943
+    },
+    {
+      "T": 56,
+      "rope": false,
+      "median_stock_us": 6.5100321769714355,
+      "median_repair_us": 1.661952018737793,
+      "saving_us": 4.848080158233643
+    },
+    {
+      "T": 56,
+      "rope": true,
+      "median_stock_us": 6.583680152893066,
+      "median_repair_us": 1.7177599668502808,
+      "saving_us": 4.865920186042786
+    },
+    {
+      "T": 128,
+      "rope": false,
+      "median_stock_us": 6.948256015777588,
+      "median_repair_us": 1.8585599660873413,
+      "saving_us": 5.089696049690247
+    },
+    {
+      "T": 128,
+      "rope": true,
+      "median_stock_us": 7.086592197418213,
+      "median_repair_us": 1.9793920516967773,
+      "saving_us": 5.1072001457214355
+    },
+    {
+      "T": 256,
+      "rope": false,
+      "median_stock_us": 7.458255767822266,
+      "median_repair_us": 2.3438560962677,
+      "saving_us": 5.114399671554565
+    },
+    {
+      "T": 256,
+      "rope": true,
+      "median_stock_us": 7.60371208190918,
+      "median_repair_us": 2.514944076538086,
+      "saving_us": 5.088768005371094
+    },
+    {
+      "T": 410,
+      "rope": false,
+      "median_stock_us": 7.995391845703125,
+      "median_repair_us": 2.786815881729126,
+      "saving_us": 5.208575963973999
+    },
+    {
+      "T": 410,
+      "rope": true,
+      "median_stock_us": 8.1725435256958,
+      "median_repair_us": 3.0401759147644043,
+      "saving_us": 5.1323676109313965
+    },
+    {
+      "T": 416,
+      "rope": false,
+      "median_stock_us": 7.957503795623779,
+      "median_repair_us": 2.8154079914093018,
+      "saving_us": 5.1420958042144775
+    },
+    {
+      "T": 416,
+      "rope": true,
+      "median_stock_us": 8.181743621826172,
+      "median_repair_us": 3.098112106323242,
+      "saving_us": 5.08363151550293
+    }
+  ]
+}
