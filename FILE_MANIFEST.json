@@ -11,8 +11,8 @@
   },
   {
     "path": "article.md",
-    "bytes": 46169,
-    "sha256": "40271e7c9087796589a854be8ae207e4c960844bd44e8895b26d40fca9c84c57"
+    "bytes": 49008,
+    "sha256": "8d65f5634f07b0cc6df8ea92867a748747818cf3f4f6e83506ccba2b6ab613a0"
   },
   {
     "path": "assets/diagrams/attention-fusion.excalidraw",
@@ -63,6 +63,16 @@
     "path": "assets/diagrams/expert-routing.svg",
     "bytes": 206433,
     "sha256": "a01b4aa650108e5e7e3a11c479ec4033b2983e1129c2b7eeb53174b70a1dac8b"
+  },
+  {
+    "path": "assets/diagrams/next-investigation.excalidraw",
+    "bytes": 31033,
+    "sha256": "3866c9f63bebf8c959d8ede31a50413968c8a34cbf1166e6d365e5b8a2941f65"
+  },
+  {
+    "path": "assets/diagrams/next-investigation.svg",
+    "bytes": 196001,
+    "sha256": "65bc70aab97ae029ebb3f785b0d2663fc7e2f3cd542e2be712d19bfbb19b9d4c"
   },
   {
     "path": "assets/diagrams/repair-dispatch.excalidraw",
@@ -301,8 +311,8 @@
   },
   {
     "path": "index.html",
-    "bytes": 61595,
-    "sha256": "1e1122b7839425bcc3b8daa65d8cdb7c3bb023c8d3eed53a2f3e500956eaa892"
+    "bytes": 65352,
+    "sha256": "31c763c68c3ebca9e07f4b2a0dea15f221cea952d037790bb77d1dea584abc51"
   },
   {
     "path": "LICENSE",
@@ -326,8 +336,8 @@
   },
   {
     "path": "README.md",
-    "bytes": 6629,
-    "sha256": "4a96bc721bb10835baa6fb1ee54f172392ba8c3076aa4ec5713946a43bf05165"
+    "bytes": 6948,
+    "sha256": "d989f7e807a4e260df84fa4201dacb99c095a54ae14ecf277a5233e813cfb8f7"
   },
   {
     "path": "requirements.txt",
@@ -357,7 +367,7 @@
   {
     "path": "tools/build.py",
     "bytes": 8186,
-    "sha256": "0e2d0d0961d8244f4bcc3bb0a939ec39ccd1dc6b9b1737b5342d9e3045be24c4"
+    "sha256": "1a86a98e58e35424b1de7c1e15be1a7fc91c29eb7283eee4860f99478ab704b8"
   },
   {
     "path": "tools/check_performance_budget.py",
@@ -376,8 +386,8 @@
   },
   {
     "path": "tools/editorial-qa.cjs",
-    "bytes": 3401,
-    "sha256": "2070f75342d225af71cb85512828d68f95bdffff140c33ca9c537043181085a6"
+    "bytes": 4034,
+    "sha256": "c8b934eb2b3cea5d9c0b328694338aedfb9865ad4053b49f4812470b3531fef1"
   },
   {
     "path": "tools/figures.py",
@@ -402,7 +412,7 @@
   {
     "path": "tools/qa.cjs",
     "bytes": 18992,
-    "sha256": "3e4c51129f8154b16ea7e5a53abbbffbc05c9a871e86549b316e743cdd55be07"
+    "sha256": "700aa669e0b436d20f9d05e7b2b60b164171c3a816978c4e776833b64fc571e6"
   },
   {
     "path": "tools/reference-preview.cjs",
@@ -416,12 +426,12 @@
   },
   {
     "path": "tools/sketches.py",
-    "bytes": 19545,
-    "sha256": "d4b28976bf033fe1cf67baddb5ce42903ad87f25dd86744125859874f7c3fcbe"
+    "bytes": 21167,
+    "sha256": "4336b26d2c388d76216ea19864e99c770fbe4719ae1f1e512509d0c58c7e785d"
   },
   {
     "path": "VERIFICATION.json",
     "bytes": 2816,
-    "sha256": "05dc50ea9d9fd1040eae6ca8920b3f66dcc9668902edb0b41709a673ca45b077"
+    "sha256": "001c1b1db92249fab2f2a094fe54c2aa0b2632be9117321b1c884268350c0e69"
   }
 ]

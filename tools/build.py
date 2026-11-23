@@ -70,7 +70,7 @@ def main():
 <main><div class="hero"><div class="eyebrow">Systems notebook · Open Kernel Challenge</div>
 <h1>When a GPU launch tile <br class="desktop-break">changes an <em>FP8 byte</em></h1>
 <p class="subtitle">An optimization worklog: expert scheduling, attention fusion,<br class="desktop-break"> and a numerical failure hidden in the launch geometry.</p>
-<p class="byline">Pritish Saha &nbsp;·&nbsp; 22 November 2026 &nbsp;·&nbsp; {minutes} min read<br>Revised 23 November 2026</p></div>
+<p class="byline">Pritish Saha &nbsp;·&nbsp; 22 November 2026 &nbsp;·&nbsp; {minutes} min read<br>Revised 24 November 2026</p></div>
 <div class="opening"><details class="contents"><summary>Contents <span>From the serving loop to a rounding boundary</span></summary><ol>{items}</ol></details></div>
 <div class="layout">
 <article class="article" id="article">{body}</article></div></main>

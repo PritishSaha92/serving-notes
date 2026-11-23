@@ -14,7 +14,7 @@ process.chdir(path.resolve(__dirname,'..'));
    assert.match(await page.locator('h1').innerText(),/tile\s+changes/);
    assert.equal(await page.locator('a[href$=".excalidraw"]').count(),0);
    assert.doesNotMatch(await page.locator('body').innerText(),/Editable diagram|page design were inspired/);
-   for(const name of ['expert-routing','attention-fusion','cache-writes','rounding-boundary','rounding-midpoint']){
+   for(const name of ['expert-routing','attention-fusion','cache-writes','rounding-boundary','rounding-midpoint','next-investigation']){
     assert.equal(await page.locator(`img[src="assets/diagrams/${name}.svg"]`).isVisible(),true);
    }
    if(width>1100){
@@ -36,6 +36,14 @@ process.chdir(path.resolve(__dirname,'..'));
    await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:`.preview/editorial-top-${width}.png`});
    await page.locator('#performance-budget').scrollIntoViewIfNeeded();
    await page.screenshot({path:`.preview/editorial-budget-${width}.png`});
+   await page.locator('#next-investigation').scrollIntoViewIfNeeded();
+   await page.screenshot({path:`.preview/editorial-next-${width}.png`});
+   assert.equal(await page.locator('.margin-note').count(),14);
+   assert.equal(await page.locator('.contents a[href="#next-investigation"]').count(),1);
+   assert.match(await page.locator('img[src$="next-investigation.svg"]').getAttribute('alt'),/Proposed investigation/);
+   if(width===1440||width===390){
+    await page.locator('figure').filter({has:page.locator('img[src$="next-investigation.svg"]')}).screenshot({path:`.preview/next-diagram-${width}.png`});
+   }
    if(width===1440||width===390){
     for(const [name,selector] of [['occupancy','img[src$="tile-note.svg"]'],['conversion','img[src$="rounding-note.svg"]'],['boundary','#rounding']]){
      await page.locator(selector).scrollIntoViewIfNeeded();

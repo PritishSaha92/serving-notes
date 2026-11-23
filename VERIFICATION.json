@@ -9,8 +9,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5099,
-      "marginNotes": 12,
+      "words": 5407,
+      "marginNotes": 14,
       "errors": []
     },
     {
@@ -19,8 +19,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5099,
-      "marginNotes": 12,
+      "words": 5407,
+      "marginNotes": 14,
       "errors": []
     },
     {
@@ -29,8 +29,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5125,
-      "marginNotes": 12,
+      "words": 5433,
+      "marginNotes": 14,
       "errors": []
     },
     {
@@ -39,8 +39,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5125,
-      "marginNotes": 12,
+      "words": 5433,
+      "marginNotes": 14,
       "errors": []
     },
     {
@@ -49,8 +49,8 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 5125,
-      "marginNotes": 12,
+      "words": 5433,
+      "marginNotes": 14,
       "errors": []
     }
   ],
@@ -92,11 +92,11 @@
     }
   ],
   "numberedReferences": 14,
-  "inlineCitations": 18,
-  "localLinksChecked": 34,
+  "inlineCitations": 19,
+  "localLinksChecked": 35,
   "noJavaScript": "passed",
   "directFileOpen": "passed",
-  "excalidrawScenes": 11,
+  "excalidrawScenes": 12,
   "interactiveIllustrations": "Four explanations: row packing and exact route partition with weights; stock/A/repaired-B tensor copies and fallback; two-call cache ownership; dispatch and recorded rounding example. Keyboard, reset, print and no-JS fallbacks passed at five widths.",
   "editorialReview": {
     "status": "passed",

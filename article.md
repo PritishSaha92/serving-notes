@@ -318,11 +318,27 @@ Other leads—including tokenization caching, padding masking, compilation speci
 
 For related negative results, see [alygg77’s measured kernel experiments](https://github.com/alygg77/okc-muse-spark-kernels/blob/6cae49a639ee6d14b929a5fd4a63c627f96d7dc0/docs/NEGATIVE_RESULTS.md). The [thethings.ai projection worklog](https://thethings.ai/p/okc/muse-bf16-proj-report) separately examines projection optimizations. The unported attention lead was [vjeux’s public implementation](https://github.com/vjeux/okc-2026/tree/f35a41ee1c13e316dabbf772830d47b23b453393); its porting requirements are recorded in the ledger.
 
+## What I would investigate next {#next-investigation}
+
+With another two weeks, I would start by obtaining whole-server H200 traces at representative loads, alongside repeated, unprofiled timing runs. The component tests helped explain individual changes; the missing measurement was how much exposed time each component contributed to the server. I would separate prefill from generation and follow the dependencies across ranks before choosing another kernel to optimize.
+
+<aside class="sidenote"><strong>Access was part of the constraint</strong> The queued official evaluations supplied serving results, not unrestricted interactive H200 profiling. This plan starts by obtaining that access; it is not a trace I already collected.</aside>
+
+I would then apply the <a href="#performance-budget">performance budget above</a>: estimate a plausible component saving, identify how much could shorten the critical path, and compare that opportunity with its implementation and validation cost. A profile would locate work; separate timing runs would measure the effect of changing it.
+
+<aside class="sidenote"><strong>Count exposed time</strong> Overlapping GPU work and communication cannot simply be added. Shortening an operation hidden behind another may leave wall time unchanged. The serial Amdahl calculation is a starting model, not a substitute for those dependencies.</aside>
+
+<figure><img src="assets/diagrams/next-investigation.svg" width="1000" height="990" alt="Proposed investigation: collect H200 traces and separate timing runs, identify exposed time, and estimate end-to-end benefit. If attention dominates, test split-KV choices. If prefill delays verification, test chunk budgets. Consider an expert work queue only for exposed imbalance within a GPU, or bookkeeping fusion only for repeated gaps between speculative steps."><figcaption>A proposed investigation, not additional completed experiments. Each branch needs measured headroom before implementation; none carries a predicted speedup.</figcaption></figure>
+
+If attention dominated, I would first compare FA3's supported **split-KV** choices: dividing cached history across more GPU work increases parallelism but also creates partial results to merge. The pinned backend already delegates this choice to the runtime, so the question is whether its choices leave measurable headroom—not whether splitting is missing. Numerical agreement would still need testing. [10](#ref-attention-code)
+
+If prefill delayed verification, I would test a workload-aware **prefill chunk budget**, using queued work and available cache capacity. Any policy would need to respect the serving rules and improve the throughput–latency tradeoff across loads, rather than keying decisions to benchmark labels.
+
+A unified expert work queue would come later, only for substantial exposed scheduling or load-balance costs within a GPU; it would not by itself rebalance experts across ranks. Speculative bookkeeping would be worth fusing only if a trace showed repeated gaps between verification and the next draft. These are hypotheses to test, not gains left on the table.
+
 ## What I would carry into the next project {#lessons}
 
-I would get target-hardware feedback earlier. The L40 was valuable for rejecting incorrect code, but I spent the last part of the project qualifying a path whose H200 integration and benefit were still unknown. Earlier paired serving measurements would have made the final choice less speculative.
-
-I would also design boundary tests alongside the first optimization, not after the first review. A dispatch heuristic is part of the executable program. Its thresholds deserve adjacent test cases, retained failure fixtures and changing-input replay just as much as the arithmetic body does.
+I would design boundary tests alongside the first optimization, not after the first review. A dispatch heuristic is part of the executable program. Its thresholds deserve adjacent test cases, retained failure fixtures and changing-input replay just as much as the arithmetic body does.
 
 The best observed aggregate was **1.0251×**. Repaired attention fusion passed, but these runs did not establish an incremental performance benefit. The durable lesson was the bug: adding V stores changed the launch geometry of QK normalization and exposed different rounding. Dispatch boundaries belong in the first test plan, alongside arithmetic and cache ownership.
 
@@ -358,4 +374,4 @@ The references below link to the methods, code and experiment records discussed 
 <li id="ref-result"><strong>Final completed run.</strong> <code>cfa908f197674235</code>, aggregate 1.0224. Patch <code>04ec69722720…</code>. <a href="evidence/repaired-result.md">Archived result review</a>, <a href="evidence/submission-decision.json">final-selection extract</a>, <a href="evidence/submission-method.md">submission technical note</a> and <a href="evidence/results.csv">chart data</a>. The extract records the queued checks at selection; the completed result supersedes the technical note’s pending-validation status.</li>
 </ol>
 
-<p class="colophon">Published 22 November 2026 · Revised 23 November 2026</p>
+<p class="colophon">Published 22 November 2026 · Revised 24 November 2026</p>

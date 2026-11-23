@@ -304,8 +304,36 @@ def miniatures():
     s.text(20,218,'Direct FP32 → FP8 is not\ngenerally the same conversion.',23)
     s.save()
 
+def next_investigation():
+    s=Sketch('next-investigation',990,'Choose the next serving experiment from measured exposed time')
+    s.text(25,12,'Measure the server before choosing the next kernel.',29)
+    s.text(25,57,'Proposed investigation — not implemented or measured',22,GRAY)
+    s.box(90,110,820,100,'H200 traces at representative loads\n+ repeated timing runs without profiling',BLUE,27)
+    s.line(500,215,500,245,arrow=True)
+    s.box(90,250,820,100,'Find exposed time across ranks\ncompute · communication · CPU work · idle gaps',GREEN,27)
+    s.line(500,355,500,385,arrow=True)
+    s.box(90,390,820,100,'Estimate the end-to-end saving\naccount for overlap, integration cost and validation',PURPLE,26)
+    s.line(500,495,500,527,arrow=True)
+    s.text(25,540,'If the measurements show…',25)
+    s.text(540,540,'…test this mechanism',25)
+    rows=[
+        (595,'Attention dominates','FA3 split-KV choices',BLUE),
+        (678,'Prefill delays verification','Workload-aware chunk budget',GREEN),
+        (796,'Uneven expert work within a GPU','One expert work queue',ORANGE),
+        (879,'Gaps between speculative steps','Bookkeeping / synchronization',PURPLE),
+    ]
+    for y,cause,experiment,color in rows:
+        s.rect(25,y,440,64,color,color)
+        s.text(43,y+15,cause,25)
+        s.line(470,y+32,525,y+32,color,arrow=True)
+        s.rect(535,y,440,64,color,color)
+        s.text(550,y+15,experiment,25)
+    s.text(25,758,'Deeper changes only if the trace justifies them:',22,GRAY)
+    s.text(25,950,'No measured headroom? Keep the existing path.',23,GRAY)
+    s.save()
+
 def render():
     OUT.mkdir(parents=True,exist_ok=True)
-    for fn in [serving,geometry,routing,attention,cache,boundary,midpoint,repair_dispatch,evidence,miniatures]:fn()
+    for fn in [serving,geometry,routing,attention,cache,boundary,midpoint,repair_dispatch,evidence,miniatures,next_investigation]:fn()
 
 if __name__=='__main__':render()
