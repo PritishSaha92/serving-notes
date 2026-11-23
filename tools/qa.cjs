@@ -94,7 +94,7 @@ const root=path.resolve(__dirname,'..');process.chdir(root);
    const a=note.getBoundingClientRect(),b=p.getBoundingClientRect();
    return {id:note.id,left:a.left,right:a.right,top:a.top,bottom:a.bottom,proseRight:b.right,proseBottom:b.bottom,visible:getComputedStyle(note).display!=='none'};
   }));
-  assert.equal(notes.length,13);assert.ok(notes.every(n=>n.visible));
+  assert.equal(notes.length,12);assert.ok(notes.every(n=>n.visible));
   if(width>=1101){assert.ok(notes.every(n=>n.left>n.proseRight),JSON.stringify(notes));for(let i=1;i<notes.length;i++)assert.ok(notes[i].top>=notes[i-1].bottom-1,'Overlapping margin notes')}
   else assert.ok(notes.every(n=>n.top>=n.proseBottom-1),'Mobile notes must follow their paragraph');
   assert.equal(await page.locator('.note-marker').count(),notes.length);

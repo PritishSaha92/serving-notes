@@ -11,8 +11,8 @@
   },
   {
     "path": "article.md",
-    "bytes": 46571,
-    "sha256": "3d178f0ccc98940ae138a778de9dd7c75133bb1d3ce3dee2e07019d112d69d8d"
+    "bytes": 46169,
+    "sha256": "40271e7c9087796589a854be8ae207e4c960844bd44e8895b26d40fca9c84c57"
   },
   {
     "path": "assets/diagrams/attention-fusion.excalidraw",
@@ -301,8 +301,8 @@
   },
   {
     "path": "index.html",
-    "bytes": 62284,
-    "sha256": "b30ea9a2161e06bfcf1af396138e47b214e95592d8e38560bd2dd2ccf06d4988"
+    "bytes": 61595,
+    "sha256": "1e1122b7839425bcc3b8daa65d8cdb7c3bb023c8d3eed53a2f3e500956eaa892"
   },
   {
     "path": "LICENSE",
@@ -402,7 +402,7 @@
   {
     "path": "tools/qa.cjs",
     "bytes": 18992,
-    "sha256": "f30ad87c398cbda05efb857decaec522d7c0122945ee188b61230f15c1327af8"
+    "sha256": "3e4c51129f8154b16ea7e5a53abbbffbc05c9a871e86549b316e743cdd55be07"
   },
   {
     "path": "tools/reference-preview.cjs",
@@ -422,6 +422,6 @@
   {
     "path": "VERIFICATION.json",
     "bytes": 2816,
-    "sha256": "fa15d1981c8799b9f6a7d188386b99dcbc140314b519418f4ed9d3a0087a4174"
+    "sha256": "7e93a745843fe505abe38918859f487fd40061d141a7c86f58be785740847e3e"
   }
 ]

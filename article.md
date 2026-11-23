@@ -6,8 +6,6 @@ The extra work changed the row count used to choose a GPU launch tile. That chan
 
 This was the most useful lesson from my Open Kernel Challenge serving project. I began with expert scheduling, then tried attention-preparation fusion. The **best observed aggregate score was 1.0251×** against unmodified SGLang. Repaired attention fusion passed official evaluation at **1.0224×**, but these separate runs did not establish an incremental performance benefit.
 
-<aside class="sidenote"><strong>About the work</strong> I ran this project with coding and research agents. They investigated source, implemented changes, ran probes and reviewed results; I directed the project and made the final risk decision. The independent reviewer mentioned below was a separate research agent. This article describes that collaboration.</aside>
-
 To explain the bug, I need to start with the server and the earlier scheduling work. Both optimizations tried to remove work around existing kernels. Attention fusion also had to preserve rounded values written into persistent cache state.
 
 ## The server I started with {#system}
@@ -170,7 +168,7 @@ The local conversion tests included production-path byte comparisons and probes 
 
 ## The failure hiding at a tile boundary {#rounding}
 
-A separate research agent reviewing the implementation noticed that adding V changed the row count used to choose the Triton launch configuration. The initial tests had missed the relevant boundaries.
+Implementation review exposed a gap: adding V changed the row count used to choose the Triton launch configuration. The initial tests had missed the relevant boundaries.
 
 On one rank there are 16 Q heads and two K heads, each a 64-component vector. Stock prepares **18 × T head-vector rows**. Adding two V heads makes **20 × T**. Triton’s `BLOCK_M` is the number of these head-vector rows grouped in a launch tile—not Marlin’s earlier routed-token tile.
 
