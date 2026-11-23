@@ -64,7 +64,7 @@ def main():
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="A serving optimization worklog: expert scheduling, FP8 attention preparation, a Triton rounding bug, and what eight H200s actually measured.">
 <meta name="theme-color" content="#fffff8"><title>Learning to optimize a serving system · Pritish Saha</title>
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/syntax.css"><link rel="stylesheet" href="assets/interactives.css"><script src="assets/reader.js" defer></script><script src="assets/interactives.js" defer></script></head>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/syntax.css"><link rel="stylesheet" href="assets/interactives.css"><script src="assets/playback.js" defer></script><script src="assets/reader.js" defer></script><script src="assets/interactives.js" defer></script></head>
 <body id="top"><a class="skip" href="#article">Skip to article</a><div class="progress" aria-hidden="true"></div>
 <header class="masthead"><a class="brand" href="https://pritishsaha92.github.io/">Pritish Saha</a><nav aria-label="Site"><a class="home-link" href="https://pritishsaha92.github.io/">About</a><a href="#reading">Reading notes</a><span class="draft">Systems notebook</span></nav></header>
 <main><div class="hero"><div class="eyebrow">Systems notebook · Open Kernel Challenge</div>

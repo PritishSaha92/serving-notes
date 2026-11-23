@@ -1,5 +1,6 @@
 {
   "status": "passed",
+  "playback": "passed: five viewport-driven sequences; manual pause, offscreen/hidden-tab pause, completion/replay and reduced-motion opt-in",
   "browser": "139.0.7258.155",
   "viewports": [
     {
@@ -8,7 +9,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6295,
+      "words": 6312,
       "marginNotes": 16,
       "errors": []
     },
@@ -18,7 +19,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6295,
+      "words": 6312,
       "marginNotes": 16,
       "errors": []
     },
@@ -28,7 +29,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6321,
+      "words": 6338,
       "marginNotes": 16,
       "errors": []
     },
@@ -38,7 +39,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6321,
+      "words": 6338,
       "marginNotes": 16,
       "errors": []
     },
@@ -48,7 +49,7 @@
       "broken": [],
       "missing": [],
       "h1": 1,
-      "words": 6321,
+      "words": 6338,
       "marginNotes": 16,
       "errors": []
     }

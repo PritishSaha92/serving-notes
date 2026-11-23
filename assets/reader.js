@@ -34,6 +34,9 @@
     // Replace redundant static sketches on screen only; keep both for print/no JS.
     ['rounding-boundary', 'rounding-midpoint'].forEach(name => document.querySelector(`img[src="assets/diagrams/${name}.svg"]`)?.closest('figure').classList.add('rounding-static'));
     render();
+    window.NotebookPlayback({root: document.querySelector('#tile-explorer'), controls: panel,
+      watch: document.querySelector('.rounding-stages'), getIndex: () => step, count: () => 3,
+      setIndex: value => { step = value; render(); }, interval: 5000});
   }
   let scheduled=false;
   function progress(){const max=document.documentElement.scrollHeight-innerHeight; document.querySelector('.progress').style.width=(max>0 ? 100*scrollY/max : 0)+'%';scheduled=false;}

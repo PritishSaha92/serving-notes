@@ -88,7 +88,7 @@
   mount('attention-fusion', 'attention-explorer', `
     <div class="live-eyebrow">Step through attention preparation</div>
     <h3 id="attention-explorer-title">Where do the separate operations go?</h3>
-    <p class="live-intro">Choose a version, then select an operation or use Next. Follow Q, K and V in the same positions as temporary tensors appear—or disappear.</p>
+    <p class="live-intro">The walkthrough plays when its tensors come into view. Pause to inspect a step, or choose a version and press Play. Follow Q, K and V as temporary tensors appear—or disappear.</p>
     <div class="version-controls" role="group" aria-label="Attention preparation version"><button type="button" data-version="stock" aria-pressed="true">Stock</button><button type="button" data-version="a" aria-pressed="false">A · historical</button><button type="button" data-version="b" aria-pressed="false">Repaired B</button></div>
     <label class="select-control attention-case" for="attention-case">Example call<select id="attention-case"><option value="verify8">Verify · T = 8</option><option value="verify56">Verify boundary · T = 56</option><option value="wide">Wide kernel case · T = 3641</option><option value="prefill">Prefill · T = 4096</option></select></label>
     <p class="path-notice" id="attention-path"></p>
@@ -203,6 +203,9 @@
     panel.querySelector('#attention-reset').addEventListener('click', () => { index = 0; renderStep(); });
     panel.querySelectorAll('.tensor-strips').forEach(strip => { for (let i = 0; i < 6; i++) strip.append(document.createElement('i')); });
     selectPath();
+    window.NotebookPlayback({root: panel, controls: panel.querySelector('.step-controls'),
+      watch: panel.querySelector('.tensor-board'), getIndex: () => index, count: () => steps.length,
+      setIndex: value => { index = value; renderStep(); }});
   });
 
   function installRoutePartition(panel) {
@@ -272,6 +275,32 @@
     const reset = document.createElement('button'); reset.type = 'button'; reset.textContent = 'Reset'; reset.id = 'route-reset';
     reset.addEventListener('click', () => { panel.querySelector('#expert-routes').value = 12; panel.querySelector('#expert-stock-tile').value = 64; panel.querySelector('#expert-eligible').checked = true; panel.querySelector('#expert-routes').dispatchEvent(new Event('input')); });
     packing.querySelector('.live-presets').append(reset); renderPartition();
+    const playbackControls = document.createElement('div'); playbackControls.className = 'step-controls packing-playback';
+    playbackControls.innerHTML = '<button type="button" id="packing-prev">Previous</button><span id="packing-count"></span><button type="button" id="packing-next">Next</button>';
+    packing.querySelector('.row-legend').after(playbackControls);
+    playbackControls.append(reset);
+    const examples = [12, 16, 17, 50, 65, 0]; let packingIndex = 0;
+    function showPacking(value) {
+      packingIndex = value; panel.querySelector('#expert-routes').value = examples[value];
+      panel.querySelector('#expert-routes').dispatchEvent(new Event('input'));
+      refreshPacking();
+    }
+    function refreshPacking() {
+      const found = examples.indexOf(Number(panel.querySelector('#expert-routes').value));
+      if (found >= 0) packingIndex = found;
+      playbackControls.querySelector('#packing-count').textContent = found < 0 ? 'Custom load' : `Example ${found + 1} of ${examples.length}`;
+      playbackControls.querySelector('#packing-prev').disabled = packingIndex === 0;
+      playbackControls.querySelector('#packing-next').disabled = packingIndex === examples.length - 1;
+    }
+    panel.querySelector('#expert-routes').addEventListener('input', refreshPacking);
+    panel.querySelectorAll('[data-routes]').forEach(b => b.addEventListener('click', refreshPacking));
+    playbackControls.querySelector('#packing-prev').addEventListener('click', () => showPacking(Math.max(0, packingIndex - 1)));
+    playbackControls.querySelector('#packing-next').addEventListener('click', () => showPacking(Math.min(examples.length - 1, packingIndex + 1)));
+    refreshPacking();
+    window.NotebookPlayback({root: packing, controls: playbackControls, watch: packing.querySelector('.route-comparison'),
+      getIndex: () => packingIndex, count: () => examples.length, setIndex: showPacking});
+    window.NotebookPlayback({root: partition, controls: partition.querySelector('.step-controls'), watch: partition.querySelector('#route-arrays'),
+      getIndex: () => step, count: () => 3, setIndex: value => { step = value; renderPartition(); }});
   }
 
   mount('cache-writes', 'cache-explorer', `
@@ -303,5 +332,7 @@
     panel.querySelector('#cache-next').addEventListener('click', () => { step = Math.min(2, step + 1); render(); });
     panel.querySelector('#cache-reset').addEventListener('click', () => { step = 0; render(); });
     render();
+    window.NotebookPlayback({root: panel, controls: panel.querySelector('.step-controls'), watch: panel.querySelector('#cache-replay-slots'),
+      getIndex: () => step, count: () => 3, setIndex: value => { step = value; render(); }});
   });
 })();

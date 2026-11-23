@@ -28,6 +28,8 @@ This companion contains an article, original diagrams and selected reports, not 
 
 ## Reproduction boundaries
 
+Viewport-triggered playback advances the teaching models at a reading pace (3.5 seconds per step, 5 seconds for rounding). These durations have no relationship to GPU execution times. Each sequence plays once, pauses off-screen or in a hidden tab, and can be paused, stepped or replayed. Reduced-motion preferences suppress automatic playback.
+
 The attention cards show logical per-rank head views, not physical strides: Q has 16 heads, K/V two each, with 64 components per head. These are the pinned TP8 example used in `builder-artifacts/variant-a/probe_path.py` (`D,Q,K=64,16,2`), inherited by the repair probes. The model's per-rank head-count derivation is in `python/sglang/srt/models/muse_spark.py`; the cards are not a general claim about all model configurations. The FP8 field display is checked against the saved original-B observation and exact E4M3 decoding.
 
 The static article and figures can be rebuilt locally. Reproducing GPU experiments requires the original project, pinned dependencies, appropriate hardware and model access; this repository does not pretend to provide them. There are no credentials, raw conversations or weights in the selected evidence pack.
